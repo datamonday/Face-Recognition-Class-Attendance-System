@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Form</class>
+ <widget class="QWidget" name="Form">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>760</width>
+    <height>560</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>760</width>
+    <height>560</height>
+   </size>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>760</width>
+    <height>560</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <widget class="QLabel" name="label_name">
+   <property name="geometry">
+    <rect>
+     <x>530</x>
+     <y>90</y>
+     <width>91</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>请输入姓名：</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_class">
+   <property name="geometry">
+    <rect>
+     <x>530</x>
+     <y>130</y>
+     <width>91</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>请输入班级：</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_ID">
+   <property name="geometry">
+    <rect>
+     <x>530</x>
+     <y>50</y>
+     <width>91</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>请输入学号：</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="bt_changeInfo">
+   <property name="geometry">
+    <rect>
+     <x>360</x>
+     <y>490</y>
+     <width>161</width>
+     <height>61</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>修改基本信息</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="bt_collectInfo">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>490</y>
+     <width>251</width>
+     <height>61</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>开始采集</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_title">
+   <property name="geometry">
+    <rect>
+     <x>170</x>
+     <y>10</y>
+     <width>251</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>人脸识别个人信息采集系统</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="bt_checkInfo">
+   <property name="geometry">
+    <rect>
+     <x>529</x>
+     <y>490</y>
+     <width>221</width>
+     <height>60</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>查询个人信息（仅输入学号）</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_sex">
+   <property name="geometry">
+    <rect>
+     <x>530</x>
+     <y>170</y>
+     <width>91</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>请输入性别：</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_birth">
+   <property name="geometry">
+    <rect>
+     <x>530</x>
+     <y>210</y>
+     <width>91</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>请输入生日：</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_capture">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>40</y>
+     <width>500</width>
+     <height>441</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="bt_takephoto">
+   <property name="geometry">
+    <rect>
+     <x>270</x>
+     <y>490</y>
+     <width>81</width>
+     <height>61</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>拍照</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="lineEdit_ID">
+   <property name="geometry">
+    <rect>
+     <x>630</x>
+     <y>40</y>
+     <width>121</width>
+     <height>31</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="lineEdit_Name">
+   <property name="geometry">
+    <rect>
+     <x>630</x>
+     <y>80</y>
+     <width>121</width>
+     <height>31</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="lineEdit_Class">
+   <property name="geometry">
+    <rect>
+     <x>630</x>
+     <y>120</y>
+     <width>121</width>
+     <height>31</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="lineEdit_Sex">
+   <property name="geometry">
+    <rect>
+     <x>630</x>
+     <y>160</y>
+     <width>121</width>
+     <height>31</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="lineEdit_Birth">
+   <property name="geometry">
+    <rect>
+     <x>630</x>
+     <y>200</y>
+     <width>121</width>
+     <height>31</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QTableView" name="tableView">
+   <property name="geometry">
+    <rect>
+     <x>530</x>
+     <y>241</y>
+     <width>221</width>
+     <height>241</height>
+    </rect>
+   </property>
+  </widget>
+  <zorder>label_name</zorder>
+  <zorder>label_class</zorder>
+  <zorder>label_ID</zorder>
+  <zorder>bt_collectInfo</zorder>
+  <zorder>label_title</zorder>
+  <zorder>bt_checkInfo</zorder>
+  <zorder>label_sex</zorder>
+  <zorder>label_birth</zorder>
+  <zorder>bt_changeInfo</zorder>
+  <zorder>label_capture</zorder>
+  <zorder>bt_takephoto</zorder>
+  <zorder>lineEdit_ID</zorder>
+  <zorder>lineEdit_Name</zorder>
+  <zorder>lineEdit_Class</zorder>
+  <zorder>lineEdit_Sex</zorder>
+  <zorder>lineEdit_Birth</zorder>
+  <zorder>tableView</zorder>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
