@@ -6,7 +6,7 @@ My level is limited. There may be bugs in the project. Welcome to propose soluti
 
 ## packages you need to install：
 python >= 3.6<br>
-OpenCv<br>
+OpenCV3<br>
 PyQt5<br>
 imutils<br>
 dlib<br>
@@ -24,3 +24,6 @@ navicat(optional):if you are not familiar with mysql shell operation<br>
 5.have fun!<br>
 
 Please indicate the source if reprinted.<br>
+
+# About more details
+Please view this blog：<https://blog.csdn.net/weixin_39653948/article/details/89291751>.
