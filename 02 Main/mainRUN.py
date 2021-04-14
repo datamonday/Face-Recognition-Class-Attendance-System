@@ -1,4 +1,4 @@
-# 导入必要的模块封装
+# 导入必要的模块
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtWidgets import QApplication, QWidget, QMessageBox, QInputDialog
 from PyQt5.QtGui import QImage, QIcon, QPixmap
@@ -177,7 +177,9 @@ class MainWindow(QWidget):
         # 设置显示文本格式
         self.ui.label_time.setStyleSheet(
             # "QLabel{background:white;}" 此处设置背景色
-            "QLabel{color:rgb(300,300,300,120); font-size:14px; font-weight:bold; font-family:宋体;}")
+            # "QLabel{color:rgb(300,300,300,120); font-size:14px; font-weight:bold; font-family:宋体;}"
+            "QLabel{font-size:14px; font-weight:bold; font-family:宋体;}"
+            )
         datetime = QDateTime.currentDateTime().toString()
         self.ui.label_time.setText("" + datetime)
 
@@ -688,7 +690,7 @@ class infoDialog(QWidget):
 
     def takePhoto(self):
         self.photos += 1
-        self.filename = "D:\\Project\\0-face-recognition-check-system\\03 Main\\dataset\\{}\\".format(self.text)
+        self.filename = "D:\\Github\\class-attendance-system-based-on-face-recognition\\02 Main\\dataset\\{}\\".format(self.text)
         self.mkdir(self.filename)
         photo_save_path = os.path.join(os.path.dirname(os.path.abspath('__file__')), '{}'.format(self.filename))
         self.showImage2.save(photo_save_path + datetime.now().strftime("%Y%m%d%H%M%S") + ".png")
