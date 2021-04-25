@@ -186,22 +186,12 @@
    </property>
    <item>
     <property name="text">
-     <string>1701604</string>
+     <string>FCB</string>
     </property>
    </item>
    <item>
     <property name="text">
-     <string>1701603</string>
-    </property>
-   </item>
-   <item>
-    <property name="text">
-     <string>1701602</string>
-    </property>
-   </item>
-   <item>
-    <property name="text">
-     <string>1701601</string>
+     <string>PSG</string>
     </property>
    </item>
   </widget>
