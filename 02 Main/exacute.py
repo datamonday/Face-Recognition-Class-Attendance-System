@@ -60,8 +60,12 @@ class BlinksDetectThread(QThread):
         try:
             # 初始化摄像头
             self.cap3 = cv2.VideoCapture()
-        except AttributeError:
-            print("初始化摄像头失败！")
+            # self.cap3.set(cv2.CAP_PROP_FRAME_WIDTH, 500)
+            # self.cap3.set(cv2.CAP_PROP_FRAME_HEIGHT, 400)
+            # self.cap3.set(cv2.CAP_PROP_FPS, 30)
+
+        except IOError as e:
+            print("初始化摄像头失败！", e)
 
     # 定义眨眼检测距离函数
     def eye_aspect_ratio(self, eye):
@@ -86,7 +90,7 @@ class BlinksDetectThread(QThread):
             (lStart, lEnd) = face_utils.FACIAL_LANDMARKS_IDXS["left_eye"]
             (rStart, rEnd) = face_utils.FACIAL_LANDMARKS_IDXS["right_eye"]
             # 在视频流的帧中循环
-            self.cap3.open(cv2.CAP_DSHOW)
+            self.cap3.open(0 + cv2.CAP_DSHOW)
             while self.BlinksFlag == 1:
                 # 从线程视频文件流中抓取帧，调整其大小，并将其转换为灰度通道
                 vs = VideoStream(src=cv2.CAP_DSHOW).start()
@@ -128,9 +132,8 @@ class BlinksDetectThread(QThread):
         if flag2 == 0:
             VideoStream(src=cv2.CAP_DSHOW).stop()
 
+
 #########################################################################################
-
-
 class MainWindow(QWidget):
     # 类构造函数
     def __init__(self):
@@ -141,17 +144,24 @@ class MainWindow(QWidget):
         # 设置窗口名称和图标
         self.setWindowTitle('人脸识别考勤系统')
         self.setWindowIcon(QIcon('./logo_imgs/fcblogo.jpg'))
-        # label_time显示系统时间
-        timer = QTimer(self)
-        timer.timeout.connect(self.showTimeText)
-        timer.start()
+
+        # # # 造成卡顿
+        # # label_time显示系统时间
+        # timer = QTimer(self)
+        # timer.timeout.connect(self.showTimeText)
+        # timer.start()
+
         # 初始化摄像头
         # self.url = 0 # 这样调用摄像头会报错，并且会卡死。
         self.url = cv2.CAP_DSHOW  # 默认调用0，如果要调用摄像头1，可以这样写:cv2.CAP_DSHOW + 1
         self.cap = cv2.VideoCapture()
+        # self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 500)
+        # self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 400)
+        # self.cap.set(cv2.CAP_PROP_FPS, 20)
+
         # 设置单张图片背景
-        pixmap = QPixmap('background1.png')
-        self.ui.label_camera.setPixmap(pixmap)
+        self.pixmap = QPixmap('./logo_imgs/bkg1.png')
+        self.ui.label_camera.setPixmap(self.pixmap)
         # 设置摄像头按键连接函数
         self.ui.bt_openCamera.clicked.connect(self.openCamera)
         # 设置开始考勤按键的回调函数
@@ -210,7 +220,8 @@ class MainWindow(QWidget):
         flag = self.cap.isOpened()
         if flag == False:
             self.ui.label_logo.clear()
-            self.cap.open(self.url)
+            # 默认打开Windows系统笔记本自带的摄像头，如果是外接USB，可以将0改成1
+            self.cap.open(0 + self.url)
             self.showCamera()
         elif flag == True:
             self.cap.release()
@@ -250,7 +261,10 @@ class MainWindow(QWidget):
             self.ui.bt_openCamera.setText(u'关闭相机')
             while (self.cap.isOpened()):
                 # 以BGR格式读取图像
-                ret, self.image = self.cap.read(cv2.CAP_DSHOW)
+
+                # ret, self.image = self.cap.read(0 + cv2.CAP_DSHOW)
+                ret, self.image = self.cap.read()
+
                 QApplication.processEvents()  # 这句代码告诉QT处理来处理任何没有被处理的事件，并且将控制权返回给调用者，让代码变的没有那么卡
                 # 将图像转换为RGB格式
                 show = cv2.cvtColor(self.image, cv2.COLOR_BGR2RGB)  # 这里指的是显示原图
@@ -260,6 +274,8 @@ class MainWindow(QWidget):
             # 因为最后会存留一张图像在lable上，需要对lable进行清理
             self.ui.label_camera.clear()
             self.ui.bt_openCamera.setText(u'打开相机')
+            # 设置单张图片背景
+            self.ui.label_camera.setPixmap(self.pixmap)
 
         elif self.switch_bt == 1:
             self.ui.label_logo.clear()
@@ -296,73 +312,76 @@ class MainWindow(QWidget):
                 # 从线程视频流中抓取帧
                 ret, frame = self.cap.read()
                 QApplication.processEvents()
-                # 调整框架的大小以使其宽度为900像素（同时保持纵横比），然后抓取图像尺寸
-                frame = imutils.resize(frame, width=900)
-                (h, w) = frame.shape[:2]
-                # 从图像构造一个blob
-                imageBlob = cv2.dnn.blobFromImage(
-                    cv2.resize(frame, (300, 300)), 1.0, (300, 300),
-                    (104.0, 177.0, 123.0), swapRB=False, crop=False)
-                # 应用OpenCV的基于深度学习的人脸检测器来定位输入图像中的人脸
-                detector.setInput(imageBlob)
-                detections = detector.forward()
-                # 保存识别到的人脸
-                face_names = []
-                # 循环检测
-                for i in np.arange(0, detections.shape[2]):
-                    # 提取与预测相关的置信度（即概率）
-                    confidence = detections[0, 0, i, 2]
+                if ret:
+                    # 调整框架的大小以使其宽度为900像素（同时保持纵横比），然后抓取图像尺寸
+                    frame = imutils.resize(frame, width=900)
+                    (h, w) = frame.shape[:2]
+                    # 从图像构造一个blob
+                    imageBlob = cv2.dnn.blobFromImage(
+                        cv2.resize(frame, (300, 300)), 1.0, (300, 300),
+                        (104.0, 177.0, 123.0), swapRB=False, crop=False)
+                    # 应用OpenCV的基于深度学习的人脸检测器来定位输入图像中的人脸
+                    detector.setInput(imageBlob)
+                    detections = detector.forward()
+                    # 保存识别到的人脸
+                    face_names = []
+                    # 循环检测
+                    for i in np.arange(0, detections.shape[2]):
+                        # 提取与预测相关的置信度（即概率）
+                        confidence = detections[0, 0, i, 2]
 
-                    # 用于更新相机开关按键信息
-                    flag = self.cap.isOpened()
-                    if flag == False:
-                        self.ui.bt_openCamera.setText(u'打开相机')
-                    elif flag == True:
-                        self.ui.bt_openCamera.setText(u'关闭相机')
+                        # 用于更新相机开关按键信息
+                        flag = self.cap.isOpened()
+                        if flag == False:
+                            self.ui.bt_openCamera.setText(u'打开相机')
+                        elif flag == True:
+                            self.ui.bt_openCamera.setText(u'关闭相机')
 
-                    # 过滤弱检测
-                    if confidence > confidence_default:
-                        # 计算面部边界框的（x，y）坐标
-                        box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
-                        (startX, startY, endX, endY) = box.astype("int")
+                        # 过滤弱检测
+                        if confidence > confidence_default:
+                            # 计算面部边界框的（x，y）坐标
+                            box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
+                            (startX, startY, endX, endY) = box.astype("int")
 
-                        # 提取面部ROI
-                        face = frame[startY:endY, startX:endX]
-                        (fH, fW) = face.shape[:2]
+                            # 提取面部ROI
+                            face = frame[startY:endY, startX:endX]
+                            (fH, fW) = face.shape[:2]
 
-                        # 确保面部宽度和高度足够大
-                        if fW < 20 or fH < 20:
-                            continue
+                            # 确保面部宽度和高度足够大
+                            if fW < 20 or fH < 20:
+                                continue
 
-                        # 为面部ROI构造一个blob，然后通过我们的面部嵌入模型传递blob以获得面部的128-d量化
-                        faceBlob = cv2.dnn.blobFromImage(face, 1.0 / 255, (96, 96), (0, 0, 0), swapRB=True, crop=False)
-                        embedded.setInput(faceBlob)
-                        vec = embedded.forward()
-                        # 执行分类识别面部
-                        preds = recognizer.predict_proba(vec)[0]
-                        j = np.argmax(preds)
-                        proba = preds[j]
-                        name = le.classes_[j]
-                        # 绘制面部的边界框以及相关的概率
-                        text = "{}: {:.2f}%".format(name, proba * 100)
-                        y = startY - 10 if startY - 10 > 10 else startY + 10
-                        cv2.rectangle(frame, (startX, startY), (endX, endY), (0, 0, 255), 2)
-                        frame = cv2.putText(frame, text, (startX, y), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 0, 255), 2)
-                        face_names.append(name)
+                            # 为面部ROI构造一个blob，然后通过我们的面部嵌入模型传递blob以获得面部的128-d量化
+                            faceBlob = cv2.dnn.blobFromImage(face, 1.0 / 255, (96, 96), (0, 0, 0), swapRB=True, crop=False)
+                            embedded.setInput(faceBlob)
+                            vec = embedded.forward()
+                            # 执行分类识别面部
+                            preds = recognizer.predict_proba(vec)[0]
+                            j = np.argmax(preds)
+                            proba = preds[j]
+                            name = le.classes_[j]
+                            # 绘制面部的边界框以及相关的概率
+                            text = "{}: {:.2f}%".format(name, proba * 100)
+                            y = startY - 10 if startY - 10 > 10 else startY + 10
+                            cv2.rectangle(frame, (startX, startY), (endX, endY), (0, 0, 255), 2)
+                            frame = cv2.putText(frame, text, (startX, y), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 0, 255), 2)
+                            face_names.append(name)
 
-                bt_liveness = self.ui.bt_blinks.text()
-                if bt_liveness == '停止检测':
-                    ChineseText = PutChineseText.put_chinese_text('./utils/microsoft.ttf')
-                    frame = ChineseText.draw_text(frame, (330, 80), ' 请眨眨眼睛 ', 25, (55, 255, 55))
-                # 显示输出框架
-                show_video = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)  # 这里指的是显示原图
-                # opencv读取图片的样式，不能通过Qlabel进行显示，需要转换为Qimage。
-                # QImage(uchar * data, int width, int height, int bytesPerLine, Format format)
-                self.showImage = QImage(show_video.data, show_video.shape[1], show_video.shape[0], QImage.Format_RGB888)
-                self.ui.label_camera.setPixmap(QPixmap.fromImage(self.showImage))
-                self.set_name = set(face_names)
-                self.set_names = tuple(self.set_name)
-                self.recordNames()
+                    bt_liveness = self.ui.bt_blinks.text()
+                    if bt_liveness == '停止检测':
+                        ChineseText = PutChineseText.put_chinese_text('./utils/microsoft.ttf')
+                        frame = ChineseText.draw_text(frame, (330, 80), ' 请眨眨眼睛 ', 25, (55, 255, 55))
+                    # 显示输出框架
+                    show_video = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)  # 这里指的是显示原图
+                    # opencv读取图片的样式，不能通过Qlabel进行显示，需要转换为Qimage。
+                    # QImage(uchar * data, int width, int height, int bytesPerLine, Format format)
+                    self.showImage = QImage(show_video.data, show_video.shape[1], show_video.shape[0], QImage.Format_RGB888)
+                    self.ui.label_camera.setPixmap(QPixmap.fromImage(self.showImage))
+                    self.set_name = set(face_names)
+                    self.set_names = tuple(self.set_name)
+                    self.recordNames()
+                else:
+                    self.cap.release()
 
             # 因为最后一张画面会显示在GUI中，此处实现清除。
             self.ui.label_camera.clear()
@@ -670,6 +689,7 @@ class infoDialog(QWidget):
         # 初始化摄像头
         self.url2 = cv2.CAP_DSHOW
         self.cap2 = cv2.VideoCapture()
+
         # 初始化保存人脸数目
         self.photos = 0
 
@@ -688,7 +708,7 @@ class infoDialog(QWidget):
             self.text, self.ok = QInputDialog.getText(self, '创建个人图像数据库', '请输入学号:')
             if self.ok and self.text != '':
                 self.Dialog.label_capture.clear()
-                self.cap2.open(self.url2)
+                self.cap2.open(0 + self.url2)
                 self.showCapture()
         elif flagCam == True:
             self.cap2.release()
