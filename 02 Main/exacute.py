@@ -152,8 +152,10 @@ class MainWindow(QWidget):
         # timer.start()
 
         # 初始化摄像头
-        # self.url = 0 # 这样调用摄像头会报错，并且会卡死。
-        self.url = cv2.CAP_DSHOW  # 默认调用0，如果要调用摄像头1，可以这样写:cv2.CAP_DSHOW + 1
+        # self.url = 0 # 这样调用摄像头可能会卡死。
+        # 默认调用0，如果要调用摄像头1，可以这样写:cv2.CAP_DSHOW + 1
+        # self.url = cv2.CAP_DSHOW # 这样调用摄像头画面全黑
+        self.url = 1
         self.cap = cv2.VideoCapture()
         # self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 500)
         # self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 400)
@@ -687,7 +689,8 @@ class infoDialog(QWidget):
         # 初始化信息导入列表
         self.users = []
         # 初始化摄像头
-        self.url2 = cv2.CAP_DSHOW
+        # self.url2 = cv2.CAP_DSHOW
+        self.url2 = 1
         self.cap2 = cv2.VideoCapture()
 
         # 初始化保存人脸数目
