@@ -147,13 +147,11 @@ pip install dlib
 
 深度学习人脸识别流程可以总结如下（图自论文：I. Masi, Y. Wu, T. Hassner and P. Natarajan, "**Deep Face Recognition: A Survey**," 2018 31st SIBGRAPI Conference on Graphics, Patterns and Images (SIBGRAPI), 2018, pp. 471-478, doi: 10.1109/SIBGRAPI.2018.00067.）：
 
-![image-20210525223634171](./images/deep_face_recognition_process.png)
-
-
+![image-20210526000357643](./images/deep_face_recognition_process.png)
 
 总的来说应用人脸识别分为四步：（1）人脸检测，对输入的图片应用人脸检测算法（本项目中使用OpenCV提供的训练好的ResNet-SSD模型）找出人脸的坐标，过程如下图所示：
 
-![image-20210525223208589](C:\Users\34123\AppData\Roaming\Typora\typora-user-images\image-20210525223208589.png)
+![image-20210525223208589](./images/face_detection.png)
 
 （2）应用人脸校正算法，对人脸进行校正，将图像进行保持图片相对平行的基本图像变换，例如旋转和缩放 (仿射变换, affine transformations)，使得眼睛和嘴巴尽可能靠近中心，即目的是将非正视角的人脸校正到使两眼处于同一水平位置。如下图所示：
 
@@ -403,11 +401,11 @@ sys.path.append(rootdir)
 ## 9.1 交流群
 
 <font color=blue> **群号：1062310557**。</font> 二维码：
-![在这里插入图片描述](./images/qq)
+![在这里插入图片描述](./images/qq.png)
 
 此外，群文件分享了很多机器学习的经典书籍、教程、论文以及一些前沿论文，感兴趣的可以自取。
 
-![image-20210525222250616](./images/al_qq_documents)
+![image-20210525222250616](./images/al_qq_documents.png)
 
 
 
