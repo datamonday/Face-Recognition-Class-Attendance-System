@@ -125,13 +125,13 @@ pip install dlib
 
 ## 3.1 主界面
 
-![在这里插入图片描述](https://img-blog.csdnimg.cn/20200225112100621.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl8zOTY1Mzk0OA==,size_1,color_FFFFFF,t_70#pic_center)
+![在这里插入图片描述](./images/main_window.png)
 
 ---
 
 ## 3.2 信息采集界面
 
-![在这里插入图片描述](https://img-blog.csdnimg.cn/20200225112135112.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl8zOTY1Mzk0OA==,size_1,color_FFFFFF,t_70#pic_center)
+![在这里插入图片描述](./images/info_window.png)
 
 
 
@@ -147,7 +147,7 @@ pip install dlib
 
 深度学习人脸识别流程可以总结如下（图自论文：I. Masi, Y. Wu, T. Hassner and P. Natarajan, "**Deep Face Recognition: A Survey**," 2018 31st SIBGRAPI Conference on Graphics, Patterns and Images (SIBGRAPI), 2018, pp. 471-478, doi: 10.1109/SIBGRAPI.2018.00067.）：
 
-![image-20210525223634171](C:\Users\34123\AppData\Roaming\Typora\typora-user-images\image-20210525223634171.png)
+![image-20210525223634171](./images/deep_face_recognition_process.png)
 
 
 
@@ -157,11 +157,11 @@ pip install dlib
 
 （2）应用人脸校正算法，对人脸进行校正，将图像进行保持图片相对平行的基本图像变换，例如旋转和缩放 (仿射变换, affine transformations)，使得眼睛和嘴巴尽可能靠近中心，即目的是将非正视角的人脸校正到使两眼处于同一水平位置。如下图所示：
 
-![image-20210525223023860](C:\Users\34123\AppData\Roaming\Typora\typora-user-images\image-20210525223023860.png)
+![image-20210525223023860](./images/face_alignment.png)
 
 （3）使用人脸识别算法（本文中使用Google在2015年提出的FaceNet，论文 **FaceNet: A Unified Embedding for Face Recognition and Clustering**）对纯人脸图像进行特征提取，FaceNet是将人脸编码为128维的向量，又称为嵌入（embedding），这个属于在自然语言处理领域非常常用。下图是FaceNet的论文中描述的网络架构：
 
-![image-20210525223540033](C:\Users\34123\AppData\Roaming\Typora\typora-user-images\image-20210525223540033.png)
+![image-20210525223540033](./images/facenet_architecture.png)
 
 （4）如果是训练的话，上一步已经结束了，但是要应用人脸识别算法，还需要在下游任务上实现分类。故本项目中使用支持向量机（Support Vector Machine，SVM）实现对各人脸128维向量的分类任务。**注意：SVM本质上为二分类器，请保证人脸数据库中至少包含两个人！否则可能导致闪退！** 当然也可以使用神经网络或者距离度量实现，可以自行探索。注：SVM使用scikit-learn提供的[SVC API](https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html)实现。
 
@@ -201,11 +201,11 @@ pip install dlib
 
 关于本机配置MySQL环境的教程很多，此处不再赘述。仅给出本项目中的创建方式和表格信息。
 
-![在这里插入图片描述](https://img-blog.csdnimg.cn/20200327152533314.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl8zOTY1Mzk0OA==,size_16,color_FFFFFF,t_70)
-![在这里插入图片描述](https://img-blog.csdnimg.cn/20200327152753442.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl8zOTY1Mzk0OA==,size_16,color_FFFFFF,t_70)
-![在这里插入图片描述](https://img-blog.csdnimg.cn/20200327152911944.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl8zOTY1Mzk0OA==,size_16,color_FFFFFF,t_70)
-![在这里插入图片描述](https://img-blog.csdnimg.cn/20200327153021968.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl8zOTY1Mzk0OA==,size_16,color_FFFFFF,t_70)
-![在这里插入图片描述](https://img-blog.csdnimg.cn/20200327153143248.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl8zOTY1Mzk0OA==,size_16,color_FFFFFF,t_70)
+![在这里插入图片描述](./images/build_mysql_in_navicat.png)
+![在这里插入图片描述](./images/build_mysql_in_navicat2.png)
+![在这里插入图片描述](./images/build_mysql_in_navicat3.png)
+![在这里插入图片描述](./images/build_mysql_in_navicat4.png)
+![在这里插入图片描述](./images/build_mysql_in_navicat5.png)
 
 
 
@@ -214,13 +214,9 @@ pip install dlib
 ## 5.3 MySQL表格及字段说明
 
 其主界面如下：
-![在这里插入图片描述](https://img-blog.csdnimg.cn/20210425230716592.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl8zOTY1Mzk0OA==,size_16,color_FFFFFF,t_70)
-![在这里插入图片描述](https://img-blog.csdnimg.cn/202104252307284.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl8zOTY1Mzk0OA==,size_16,color_FFFFFF,t_70)
-![在这里插入图片描述](https://img-blog.csdnimg.cn/20210425230737600.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl8zOTY1Mzk0OA==,size_16,color_FFFFFF,t_70)
-
----
-
-
+![在这里插入图片描述](./images/mysql_table1.png)
+![在这里插入图片描述](./images/mysql_table2.png)
+![在这里插入图片描述](./images/mysql_table3.png)
 
 
 ---
@@ -268,7 +264,7 @@ sql = "SELECT * FROM STUDENTS WHERE ID = {}".format(self.input_ID)
 ---
 # 6. 源码介绍及使用🍨 
 ## 6.1 代码目录树
-![image-20210525232834845](C:\Users\34123\AppData\Roaming\Typora\typora-user-images\image-20210525232834845.png)
+![image-20210525232834845](./images/code_tree.png)
 
 ---
 ## 6.2 关键文件说明
@@ -288,7 +284,7 @@ sql = "SELECT * FROM STUDENTS WHERE ID = {}".format(self.input_ID)
 
 ---
 
-## 6.4 使用步骤
+## 6.4 使用步骤 
 
 1. navicat创建数据库，打开数据库录入学生信息和班级信息；
 2. 修改源码，连接到创建的数据库；
@@ -297,7 +293,7 @@ sql = "SELECT * FROM STUDENTS WHERE ID = {}".format(self.input_ID)
 5. 开始考勤：<kbd>打开相机</kbd> --> <kbd>开始考勤</kbd>
 6. Have fun!😊
 
-
+更详细的教程，稍后更新。
 
 ---
 
@@ -407,17 +403,17 @@ sys.path.append(rootdir)
 ## 9.1 交流群
 
 <font color=blue> **群号：1062310557**。</font> 二维码：
-![在这里插入图片描述](https://img-blog.csdnimg.cn/20200327143228512.png#pic_center)
+![在这里插入图片描述](./images/qq)
 
 此外，群文件分享了很多机器学习的经典书籍、教程、论文以及一些前沿论文，感兴趣的可以自取。
 
-![image-20210525222250616](C:\Users\34123\AppData\Roaming\Typora\typora-user-images\image-20210525222250616.png)
+![image-20210525222250616](./images/al_qq_documents)
 
 
 
 ## 9.2 公众号
 
-![qrcode](C:\Users\34123\Desktop\公众号\qrcode.jpg)
+![qrcode](./images/qrcode.jpg)
 
 <font color=red>**看到这了都，白嫖好意思吗（doge）**</font>
 
