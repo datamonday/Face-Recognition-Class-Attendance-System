@@ -4,7 +4,6 @@ import sys
 from datetime import datetime
 
 import cv2
-import dlib
 import imutils
 import numpy as np
 # 导入数据库操作包
@@ -22,120 +21,31 @@ from scipy.spatial import distance as dist
 
 # 导入UI主界面
 from ui import MainUI
-# 导入信息采集框界面
-from ui import InfoUI
+
 # 导入打印中文脚本
 from utils import PutChineseText
 # 导入人脸识别检测包
 from utils import GeneratorModel
+# 导入眨眼检测类
+from utils.BlinksDetectionThread import BlinksDetectThread
+# 导入信息采集槽函数类
+from utils.InfoDialog import InfoDialog
+# 添加数据库连接操作
+from utils.GlobalVar import connect_to_sql
+
+# # 为方便调试，修改后导入模块，重新导入全局变量模块
+# import importlib
+# importlib.reload(GeneratorModel)
+
+import sys
+import os
+# 添加当前路径到环境变量
+sys.path.append(os.getcwd())
+
+# 导入全局变量，主要包含摄像头ID等
+from utils.GlobalVar import CAMERA_ID
 
 
-# 定义活体检测-眨眼检测类
-class BlinksDetectThread(QThread):
-    trigger = QtCore.pyqtSignal()
-
-    def __init__(self):
-        super(BlinksDetectThread, self).__init__()
-
-        # 人眼关键点检测模型路径，用于活体鉴别
-        self.shape_predictor_path = "./model_blink_detection/shape_predictor_68_face_landmarks.dat"
-        # 定义两个常数，一个用于眼睛纵横比以指示眨眼，第二个作为眨眼连续帧数的阈值
-        self.EYE_AR_THRESH = 0.25
-        self.EYE_AR_CONSEC_FRAMES = 3
-
-        # 初始化帧计数器和总闪烁次数
-        self.COUNTER = 0
-        self.TOTAL = 0
-
-        # 初始化变量
-        self.A = 0
-        self.B = 0
-        self.C = 0
-        self.leftEye = 0
-        self.rightEye = 0
-        self.leftEAR = 0
-        self.rightEAR = 0
-        self.ear = 0
-
-        # 线程启动停止标识符
-        self.BlinksFlag = 1
-
-        try:
-            # 初始化摄像头
-            self.cap3 = cv2.VideoCapture()
-            # self.cap3.set(cv2.CAP_PROP_FRAME_WIDTH, 500)
-            # self.cap3.set(cv2.CAP_PROP_FRAME_HEIGHT, 400)
-            # self.cap3.set(cv2.CAP_PROP_FPS, 30)
-
-        except IOError as e:
-            print("初始化摄像头失败！", e)
-
-    # 定义眨眼检测距离函数
-    def eye_aspect_ratio(self, eye):
-        # 计算两组垂直方向上的眼睛标记（x，y）坐标之间的欧氏距离
-        self.A = dist.euclidean(eye[1], eye[5])
-        self.B = dist.euclidean(eye[2], eye[4])
-        # 计算水平方向上的眼睛标记（x，y）坐标之间的欧氏距离
-        self.C = dist.euclidean(eye[0], eye[3])
-        # 计算眼睛的纵横比
-        ear = (self.A + self.B) / (2.0 * self.C)
-        # 返回眼睛的纵横比
-        return ear
-
-    def run(self):
-        if self.BlinksFlag == 1:
-            # 初始化dlib的人脸检测器（基于HOG），然后创建面部标志预测器
-            print("[INFO] loading facial landmark predictor...")
-            detector = dlib.get_frontal_face_detector()
-            predictor = dlib.shape_predictor(self.shape_predictor_path)
-            # 分别提取左眼和右眼的面部标志的索引
-            (lStart, lEnd) = face_utils.FACIAL_LANDMARKS_IDXS["left_eye"]
-            (rStart, rEnd) = face_utils.FACIAL_LANDMARKS_IDXS["right_eye"]
-            # 在视频流的帧中循环
-            self.cap3.open(0 + cv2.CAP_DSHOW)
-            while self.BlinksFlag == 1:
-                # 从线程视频文件流中抓取帧，调整其大小，并将其转换为灰度通道
-                vs = VideoStream(src=cv2.CAP_DSHOW).start()
-                frame3 = vs.read()
-                # ret, frame3 = self.cap3.read()
-                QApplication.processEvents()
-                frame3 = imutils.resize(frame3, width=900)
-                gray = cv2.cvtColor(frame3, cv2.COLOR_BGR2GRAY)
-                # 检测灰度帧中的人脸
-                rects = detector(gray, 0)
-                # 循环检测人脸
-                for rect in rects:
-                    # 确定面部区域的面部标记，然后将面部标记（x，y）坐标转换为NumPy阵列
-                    shape = predictor(gray, rect)
-                    shape = face_utils.shape_to_np(shape)
-                    # 提取左眼和右眼坐标，然后使用坐标计算双眼的眼睛纵横比
-                    self.leftEye = shape[lStart:lEnd]
-                    self.rightEye = shape[rStart:rEnd]
-                    self.leftEAR = self.eye_aspect_ratio(self.leftEye)
-                    self.rightEAR = self.eye_aspect_ratio(self.rightEye)
-                    # 两只眼睛的平均眼睛纵横比
-                    self.ear = (self.leftEAR + self.rightEAR) / 2.0
-                    # 检查眼睛纵横比是否低于闪烁阈值,如果是,则增加闪烁帧计数器;否则执行else
-                    if self.ear < self.EYE_AR_THRESH:
-                        self.COUNTER += 1
-                    else:
-                        # 如果眼睛闭合次数足够则增加眨眼总数
-                        if self.COUNTER >= self.EYE_AR_CONSEC_FRAMES:
-                            self.TOTAL += 1
-                        # 重置眼框计数器
-                        self.COUNTER = 0
-                self.trigger.emit()
-                if self.TOTAL == 1:
-                    print("活体！眨眼次数为: {}".format(self.TOTAL))
-
-    # 定义停止线程操作
-    def terminate(self):
-        self.BlinksFlag = 0
-        if flag2 == 0:
-            VideoStream(src=cv2.CAP_DSHOW).stop()
-
-
-#########################################################################################
 class MainWindow(QtWidgets.QMainWindow):
     # 类构造函数
     def __init__(self):
@@ -144,13 +54,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui = MainUI.Ui_Form()
         self.ui.setupUi(self)
 
-        # ####################### 需更改路径 ######################
-        # 导入opencv人脸检测xml文件
-        self.cascade = './model_face_detection/haarcascade_frontalface_default.xml'
+        # ####################### 相对路径 ######################
         # 初始化label显示的(黑色)背景
         self.bkg_pixmap = QPixmap('./logo_imgs/bkg1.png')
-        # 设置提示窗口的logo
-        self.logo = QIcon('./logo_imgs/fcblogo.jpg')
+        # 设置主窗口的logo
+        self.logo = QIcon('./logo_imgs/fcb_logo.jpg')
+        # 设置提示框icon
+        self.info_icon = QIcon('./logo_imgs/info_icon.jpg')
         # OpenCV深度学习人脸检测器的路径
         self.detector_path = "./model_face_detection"
         # OpenCV深度学习面部嵌入模型的路径
@@ -160,7 +70,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # 标签编码器的路径
         self.le_path = "./saved_weights/le.pickle"
 
-        # ####################### 窗口初始化 ######################
+        # ###################### 窗口初始化 ######################
         # 设置窗口名称和图标
         self.setWindowTitle('人脸识别考勤系统 v2.0')
         self.setWindowIcon(self.logo)
@@ -184,20 +94,17 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # ###################### 按键的槽函数 ######################
         # 设置摄像头按键连接函数
-        self.ui.bt_openCamera.clicked.connect(self.openCamera)
+        self.ui.bt_open_camera.clicked.connect(self.open_camera)
         # 设置开始考勤按键的回调函数
-        self.ui.bt_startCheck.clicked.connect(self.autoControl)
+        self.ui.bt_start_check.clicked.connect(self.auto_control)
         # 设置活体检测按键的回调函数
-        self.ui.bt_blinks.clicked.connect(self.BlinksThread)
+        self.ui.bt_blinks.clicked.connect(self.blinks_thread)
         # 设置“退出系统”按键事件, 按下之后退出主界面
         self.ui.bt_exit.clicked.connect(QCoreApplication.instance().quit)
         # 设置信息采集按键连接
-        self.bt_gathering = self.ui.bt_gathering
+        self.ui.bt_gathering.clicked.connect(self.open_info_dialog)
         # 设置区分打开摄像头还是人脸识别的标识符
         self.switch_bt = 0
-
-        global flag2
-        flag2 = 0
 
         # ###################### 数据库相关操作 ######################
         # 初始化需要记录的人名
@@ -205,19 +112,23 @@ class MainWindow(QtWidgets.QMainWindow):
         # 设置更新人脸数据库的按键连接函数
         self.ui.bt_generator.clicked.connect(self.train_model)
         # 设置查询班级人数按键的连接函数
-        self.ui.bt_check.clicked.connect(self.checkNums)
+        self.ui.bt_check.clicked.connect(self.check_nums)
         # 设置请假按键的连接函数
-        self.ui.bt_leave.clicked.connect(self.leaveButton)
+        self.ui.bt_leave.clicked.connect(self.leave_button)
         # 设置漏签补签按键的连接函数
-        self.ui.bt_Supplement.clicked.connect(self.supplymentButton)
+        self.ui.bt_supplement.clicked.connect(self.supplyment_button)
         # 设置对输入内容的删除提示
-        self.ui.lineEdit.setClearButtonEnabled(True)
-        self.ui.lineEdit_2.setClearButtonEnabled(True)
+        self.ui.lineEdit_leave.setClearButtonEnabled(True)
+        self.ui.lineEdit_supplement.setClearButtonEnabled(True)
         # 设置查看结果（显示未到和迟到）按键的连接函数
-        self.ui.bt_view.clicked.connect(self.showLateAbsentee)
+        self.ui.bt_view.clicked.connect(self.show_late_absence)
 
-        # self.checkTime, ok = QInputDialog.getText(self, '考勤时间设定', '请输入考勤时间(格式为00:00:00):')
-        self.checkTime = '08:00:00'
+        # self.check_time_set, ok = QInputDialog.getText(self, '考勤时间设定', '请输入考勤时间(格式为00:00:00):')
+        self.check_time_set = '08:00:00'
+
+        # 设置输入考勤时间的限制
+        self.ui.spinBox_time_hour.setRange(0, 23)
+        self.ui.spinBox_time_minute.setRange(0, 59)
 
     # 显示系统时间以及相关文字提示函数
     def show_time_text(self):
@@ -234,53 +145,64 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # 显示“人脸识别考勤系统”文字
         self.ui.label_title.setFixedWidth(400)
-        self.ui.label_title.setStyleSheet("QLabel{font-size:30px; font-weight:bold; font-family:宋体;}")
+        self.ui.label_title.setStyleSheet("QLabel{font-size:26px; font-weight:bold; font-family:宋体;}")
         self.ui.label_title.setText("人脸识别考勤系统")
 
-    def openCamera(self):
+    def open_camera(self):
         # 判断摄像头是否打开，如果打开则为true，反之为false
         flag = self.cap.isOpened()
         if not flag:
             self.ui.label_logo.clear()
             # 默认打开Windows系统笔记本自带的摄像头，如果是外接USB，可将0改成1
             self.cap.open(self.url)
-            self.showCamera()
+            self.show_camera()
         elif flag:
             self.cap.release()
             self.ui.label_logo.clear()
             self.ui.label_camera.clear()
-            self.ui.bt_openCamera.setText(u'打开相机')
+            self.ui.bt_open_camera.setText(u'打开相机')
 
     # 进入考勤模式，通过switch_bt进行控制的函数
-    def autoControl(self):
-        if self.switch_bt == 0:
-            self.switch_bt = 1
-            flag2 = 1
-            self.ui.bt_startCheck.setText(u'退出考勤')
-            self.showCamera()
-        elif self.switch_bt == 1:
-            self.switch_bt = 0
-            flag2 = 0
-            self.ui.bt_startCheck.setText(u'开始考勤')
-            self.showCamera()
-
-    def BlinksThread(self):
-        bt_text = self.ui.bt_blinks.text()
-        if bt_text == '活体检测':
-            # 初始化眨眼检测线程
-            self.startThread = BlinksDetectThread()
-            self.startThread.start()  # 启动线程
-            self.ui.bt_blinks.setText('停止检测')
+    def auto_control(self):
+        self.check_time_set = str(self.ui.spinBox_time_hour.text()) + ":" + \
+                              str(self.ui.spinBox_time_minute.text()) + ":" + "00"
+        if self.check_time_set == '':
+            QMessageBox.warning(self, "Warning", "请先设定考勤时间(例 08:00)！", QMessageBox.Ok)
         else:
-            self.ui.bt_blinks.setText('活体检测')
-            # self.startThread.terminate()  # 停止线程
+            QMessageBox.information(self, "Tips", f"您设定的考勤时间为：{self.check_time_set}", QMessageBox.Ok)
 
-    def showCamera(self):
+            if self.cap.isOpened():
+                if self.switch_bt == 0:
+                    self.switch_bt = 1
+                    self.ui.bt_start_check.setText(u'退出考勤')
+                    self.show_camera()
+                elif self.switch_bt == 1:
+                    self.switch_bt = 0
+                    self.ui.bt_start_check.setText(u'开始考勤')
+                    self.show_camera()
+            else:
+                QMessageBox.information(self, "Tips", "请先打开摄像头！", QMessageBox.Ok)
+
+    def blinks_thread(self):
+        bt_text = self.ui.bt_blinks.text()
+        if self.cap.isOpened():
+            if bt_text == '活体检测':
+                # 初始化眨眼检测线程
+                self.startThread = BlinksDetectThread()
+                self.startThread.start()  # 启动线程
+                self.ui.bt_blinks.setText('停止检测')
+            else:
+                self.ui.bt_blinks.setText('活体检测')
+                # self.startThread.terminate()  # 停止线程
+        else:
+            QMessageBox.information(self, "Tips", "请先打开摄像头！", QMessageBox.Ok)
+
+    def show_camera(self):
         # 如果按键按下
         global embedded, le, recognizer
         if self.switch_bt == 0:
             self.ui.label_logo.clear()
-            self.ui.bt_openCamera.setText(u'关闭相机')
+            self.ui.bt_open_camera.setText(u'关闭相机')
             while self.cap.isOpened():
                 # 以BGR格式读取图像
                 ret, self.image = self.cap.read()
@@ -293,13 +215,13 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.ui.label_camera.setPixmap(QPixmap.fromImage(self.showImage))
             # 因为最后会存留一张图像在lable上，需要对lable进行清理
             self.ui.label_camera.clear()
-            self.ui.bt_openCamera.setText(u'打开相机')
+            self.ui.bt_open_camera.setText(u'打开相机')
             # 设置单张图片背景
             self.ui.label_camera.setPixmap(self.bkg_pixmap)
 
         elif self.switch_bt == 1:
             self.ui.label_logo.clear()
-            self.ui.bt_startCheck.setText(u'退出考勤')
+            self.ui.bt_start_check.setText(u'退出考勤')
 
             # 人脸检测的置信度
             confidence_default = 0.5
@@ -309,17 +231,18 @@ class MainWindow(QtWidgets.QMainWindow):
             detector = cv2.dnn.readNetFromCaffe(proto_path, model_path)
             # 从磁盘加载序列化面嵌入模型
             try:
-                print("[INFO] loading face recognizer...")
+                self.ui.textBrowser_log.append("[INFO] loading face recognizer...")
                 embedded = cv2.dnn.readNetFromTorch(self.embedding_model)
-            except IOError:
-                print("面部嵌入模型的路径不正确！")
+            except FileNotFoundError as e:
+                self.ui.textBrowser_log.append("面部嵌入模型的路径不正确！", e)
 
             # 加载实际的人脸识别模型和标签
             try:
                 recognizer = pickle.loads(open(self.recognizer_path, "rb").read())
                 le = pickle.loads(open(self.le_path, "rb").read())
-            except IOError:
-                print("人脸识别模型保存路径不正确！")
+            except FileNotFoundError as e:
+                self.ui.textBrowser_log.append("人脸识别模型保存路径不正确！", e)
+
             # 循环来自视频文件流的帧
             while self.cap.isOpened():
                 # 从线程视频流中抓取帧
@@ -338,6 +261,8 @@ class MainWindow(QtWidgets.QMainWindow):
                     detections = detector.forward()
                     # 保存识别到的人脸
                     face_names = []
+                    # 识别到的人脸字典
+                    face_name_dict = {}
                     # 循环检测
                     for i in np.arange(0, detections.shape[2]):
                         # 提取与预测相关的置信度（即概率）
@@ -346,9 +271,9 @@ class MainWindow(QtWidgets.QMainWindow):
                         # 用于更新相机开关按键信息
                         flag = self.cap.isOpened()
                         if not flag:
-                            self.ui.bt_openCamera.setText(u'打开相机')
+                            self.ui.bt_open_camera.setText(u'打开相机')
                         elif flag:
-                            self.ui.bt_openCamera.setText(u'关闭相机')
+                            self.ui.bt_open_camera.setText(u'关闭相机')
 
                         # 过滤弱检测
                         if confidence > confidence_default:
@@ -380,6 +305,8 @@ class MainWindow(QtWidgets.QMainWindow):
                             frame = cv2.putText(frame, text, (startX, y), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 0, 255), 2)
                             face_names.append(name)
 
+                            # face_name_dict[j] += 1
+
                     bt_liveness = self.ui.bt_blinks.text()
                     if bt_liveness == '停止检测':
                         ChineseText = PutChineseText.put_chinese_text('./utils/microsoft.ttf')
@@ -393,19 +320,21 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.ui.label_camera.setPixmap(QPixmap.fromImage(self.showImage))
                     self.set_name = set(face_names)
                     self.set_names = tuple(self.set_name)
-                    self.recordNames()
+                    self.record_names()
                 else:
                     self.cap.release()
 
             # 因为最后一张画面会显示在GUI中，此处实现清除。
             self.ui.label_camera.clear()
 
-    def recordNames(self):
+    def record_names(self):
         if self.set_name.issubset(self.record_name1):  # 如果self.set_names是self.record_names 的子集返回ture
             pass  # record_name1是要写进数据库中的名字信息 set_name是从摄像头中读出人脸的tuple形式
         else:
-            self.different_name1 = self.set_name.difference(self.record_name1)  # 获取到self.set_name有而self.record_name无的名字
-            self.record_name1 = self.set_name.union(self.record_name1)  # 把self.record_name变成两个集合的并集
+            # 获取到self.set_name有而self.record_name无的名字
+            self.different_name1 = self.set_name.difference(self.record_name1)
+            # 把self.record_name变成两个集合的并集
+            self.record_name1 = self.set_name.union(self.record_name1)
             # different_name是为了获取到之前没有捕捉到的人脸，并再次将record_name1进行更新
             # 将集合变成tuple，并统计人数
             self.write_data = tuple(self.different_name1)
@@ -417,18 +346,15 @@ class MainWindow(QtWidgets.QMainWindow):
                 # 将签到信息写入数据库
                 self.lineTextInfo2 = []
                 # 打开数据库连接
-                db2 = pymysql.connect(host="localhost", user="root", password="mysql105", database="facerecognition")
-                # 使用cursor()方法获取操作游标
-                cursor2 = db2.cursor()
+                db, cursor = connect_to_sql()
                 # 获取系统时间，保存到秒
-                import datetime
-                currentTime2 = str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-                results2 = self.useIDGetInfo(self.write_data[0])
+                current_time = str(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                results2 = self.use_id_get_info(self.write_data[0])
+
                 # 判断是否迟到
-                import datetime
-                self.ymd = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                self.ymd2 = datetime.datetime.now().strftime("%H:%M:%S")
-                compareResult2 = self.compare_time('{}'.format(self.ymd2), '{}'.format(self.checkTime))
+                self.ymd = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                self.ymd2 = datetime.now().strftime("%H:%M:%S")
+                compareResult2 = self.compare_time('{}'.format(self.ymd2), '{}'.format(self.check_time_set))
 
                 # 82800表示23个小时,在compare_time()函数中,如果第一个时间小于第二个时间,则为第一个时间加24h后再减去第二时间;
                 # 而正常的结果应该为'正常'.
@@ -436,7 +362,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.description2 = '迟到'
                 else:
                     self.description2 = '正常'
-                self.lineTextInfo2.append((results2[0], results2[1], results2[2], currentTime2, self.description2))
+                self.lineTextInfo2.append((results2[0], results2[1], results2[2], current_time, self.description2))
                 print(self.lineTextInfo2)
 
                 # 写入数据库
@@ -444,46 +370,41 @@ class MainWindow(QtWidgets.QMainWindow):
                     # 如果存在数据，先删除再写入。前提是设置唯一索引字段或者主键。
                     insert_sql2 = "replace into checkin(Name, ID, Class, Time, Description) values(%s, %s, %s, %s, %s)"
                     users2 = self.lineTextInfo2
-                    cursor2.executemany(insert_sql2, users2)
+                    cursor.executemany(insert_sql2, users2)
                 except ValueError as e:
-                    print(e)
-                    print("SQL execute failed!")
+                    self.ui.textBrowser_log.append("[INFO] SQL execute failed!", e)
                 else:
-                    print("SQL execute success!")
-                    QMessageBox.information(self, "Tips", "签到成功，请勿重复操作！", QMessageBox.Yes | QMessageBox.No)
+                    self.ui.textBrowser_log.append("[INFO] SQL execute success!")
+                    QMessageBox.information(self, "Tips", "签到成功，请勿重复操作！", QMessageBox.Ok)
                 # 提交到数据库执行
-                db2.commit()
-                cursor2.close()
-                db2.close()
+                db.commit()
+                cursor.close()
+                db.close()
 
     # 比较时间大小，判断是否迟到
     def compare_time(self, time1, time2):
-        import datetime
-        s_time = datetime.datetime.strptime(time1, '%H:%M:%S')
-        e_time = datetime.datetime.strptime(time2, '%H:%M:%S')
+        s_time = datetime.strptime(time1, '%H:%M:%S')
+        e_time = datetime.strptime(time2, '%H:%M:%S')
         delta = s_time - e_time
 
         return delta.seconds
 
     # 查询班级人数
-    def checkNums(self):
+    def check_nums(self):
         # 选择的班级
-        global cursor, sql, db
-        input_class = self.ui.comboBox.currentText()
+        input_class = self.ui.comboBox_class.currentText()
         print("你当前选择的班级为:", input_class)
-
         try:
             # 打开数据库连接
-            db = pymysql.connect(host="localhost", user="root", password="mysql105", database="facerecognition")
-            # 使用cursor()方法获取操作游标
-            cursor = db.cursor()
+            # 添加数据库连接操作, 使用cursor()方法获取操作游标
+            db, cursor = connect_to_sql()
             # 查询语句，实现通过ID关键字检索个人信息的功能
             sql = "select * from studentnums where class = {}".format(input_class)
 
         except ValueError:
-            print("连接数据库失败！")
+            self.ui.textBrowser_log.append("连接数据库失败！")
         else:
-            print("连接数据库成功，正在执行查询···")
+            self.ui.textBrowser_log.append("连接数据库成功，正在执行查询···")
 
         # 执行查询
         if input_class != '':
@@ -495,10 +416,10 @@ class MainWindow(QtWidgets.QMainWindow):
                 for i in results:
                     self.nums.append(i[1])
 
-            except ValueError:
-                print("查询失败，请检查命令！")
+            except ValueError as e:
+                self.ui.textBrowser_log.append("[ERROR] 查询失败，请检查命令！", e)
             else:
-                print("查询成功！")
+                self.ui.textBrowser_log.append("[INFO] 查询成功！")
 
         # 用于查询每班的实到人数
         sql2 = "select * from checkin where class = {}".format(input_class)
@@ -511,10 +432,10 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.nums2 = []
                 for i in results2:
                     self.nums2.append(i[2])
-            except ValueError:
-                print("查询实到人数失败！")
+            except ValueError as e:
+                self.ui.textBrowser_log.append("[ERROR] 查询实到人数失败！", e)
             else:
-                print("查询成功！")
+                self.ui.textBrowser_log.append("[INFO] 查询成功！")
 
         # lcd控件显示人数
         self.ui.lcd_1.display(self.nums[0])
@@ -523,68 +444,66 @@ class MainWindow(QtWidgets.QMainWindow):
         db.close()
 
     # 请假/补签登记
-    def leaveButton(self):
-        self.leaveStudents(1)
+    def leave_button(self):
+        self.leave_students(1)
 
-    def supplymentButton(self):
-        self.leaveStudents(2)
+    def supplyment_button(self):
+        self.leave_students(2)
 
-    def leaveStudents(self, button):
+    def leave_students(self, button):
         global results
         self.lineTextInfo = []
         # 为防止输入为空卡死，先进行是否输入数据的判断
-        if self.ui.lineEdit.isModified() or self.ui.lineEdit_2.isModified():
+        if self.ui.lineEdit_leave.isModified() or self.ui.lineEdit_supplement.isModified():
             # 打开数据库连接
-            db = pymysql.connect(host="localhost", user="root", password="mysql105", database="facerecognition")
-            # 使用cursor()方法获取操作游标
-            cursor = db.cursor()
+            db, cursor = connect_to_sql()
             # 获取系统时间，保存到秒
             currentTime = str(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
             if button == 1:
-                print("正在执行请假登记···")
+                self.ui.textBrowser_log.append("[INFO] 正在执行请假登记···")
                 self.description = "请假"
-                self.lineTextID = self.ui.lineEdit.text()
-                results = self.useIDGetInfo(self.lineTextID)
+                self.lineText_leave_id = self.ui.lineEdit_leave.text()
+                results = self.use_id_get_info(self.lineText_leave_id)
             elif button == 2:
-                print("正在执行漏签补签···")
+                self.ui.textBrowser_log.append("[INFO] 正在执行漏签补签···")
                 self.description = "漏签补签"
-                self.lineTextID = self.ui.lineEdit_2.text()
-                results = self.useIDGetInfo(self.lineTextID)
-            try:
-                print("正在从数据库获取当前用户信息···")
-                self.lineTextInfo.append((results[0], results[1], results[2], currentTime, self.description))
-            except ValueError:
-                print("从数据库获取信息失败，请保证当前用户的信息和考勤记录已录入数据库！")
-
-            # 写入数据库
-            try:
-                # 如果存在数据，先删除再写入。前提是设置唯一索引字段或者主键。
-                insert_sql = "replace into checkin(Name, ID, Class, Time, Description) values(%s, %s, %s, %s, %s)"
-                users = self.lineTextInfo
-                cursor.executemany(insert_sql, users)
-            except ValueError as e:
-                print(e)
-                print("写入数据库失败！")
+                self.lineText_leave_id = self.ui.lineEdit_supplement.text()
+                results = self.use_id_get_info(self.lineText_leave_id)
+            
+            if len(results) != 0:
+                try:
+                    self.ui.textBrowser_log.append("[INFO] 正在从数据库获取当前用户信息···")
+                    print(results[0], results[1], results[2], currentTime, self.description)
+                except ConnectionAbortedError as e:
+                    self.ui.textBrowser_log.append("[INFO] 从数据库获取信息失败，请保证当前用户的信息和考勤记录已录入数据库！", e)
+                # 写入数据库
+                try:
+                    # 如果存在数据，先删除再写入。前提是设置唯一索引字段或者主键。
+                    insert_sql = "replace into checkin(Name, ID, Class, Time, Description) values(%s, %s, %s, %s, %s)"
+                    users = self.lineTextInfo
+                    cursor.executemany(insert_sql, users)
+                except ValueError as e:
+                    self.ui.textBrowser_log.append("[INFO] 写入数据库失败！", e)
+                else:
+                    self.ui.textBrowser_log.append("[INFO] 写入数据库成功！")
+                    QMessageBox.warning(self, "Warning", "{} {}登记成功，请勿重复操作！".format(self.lineText_leave_id,
+                                                                                    self.description), QMessageBox.Ok)
+                # 提交到数据库执行
+                db.commit()
+                cursor.close()
+                db.close()
             else:
-                print("写入数据库成功！")
-                QMessageBox.warning(self, "warning", "{} 登记成功，请勿重复操作！".format(self.description),
-                                    QMessageBox.Yes | QMessageBox.No)
-            # 提交到数据库执行
-            db.commit()
-            cursor.close()
-            db.close()
+                QMessageBox.warning(self, "Error", f"您输入的ID {self.lineText_leave_id} 不存在！请先录入数据库！")
         else:
-            QMessageBox.warning(self, "warning", "学号不能为空，请输入后重试！", QMessageBox.Yes | QMessageBox.No)
+            QMessageBox.warning(self, "Error", "学号不能为空，请输入后重试！", QMessageBox.Ok)  # (QMessageBox.Yes | QMessageBox.No)
         # 输入框清零
-        self.ui.lineEdit.clear()
-        self.ui.lineEdit_2.clear()
+        self.ui.lineEdit_leave.clear()
+        self.ui.lineEdit_supplement.clear()
 
     # 使用ID当索引找到其它信息
-    def useIDGetInfo(self, ID):
+    def use_id_get_info(self, ID):
         # 打开数据库连接
-        db = pymysql.connect(host="localhost", user="root", password="mysql105", database="facerecognition")
-        # 使用cursor()方法获取操作游标
-        cursor = db.cursor()
+        db, cursor = connect_to_sql()
         # 查询语句，实现通过ID关键字检索个人信息的功能
         sql = "select * from students where ID = {}".format(ID)
         # 执行查询
@@ -593,19 +512,21 @@ class MainWindow(QtWidgets.QMainWindow):
                 cursor.execute(sql)
                 # 获取所有记录列表
                 results = cursor.fetchall()
-                self.checkInfo = []
+                self.check_info = []
                 for i in results:
-                    self.checkInfo.append(i[1])
-                    self.checkInfo.append(i[0])
-                    self.checkInfo.append(i[2])
-                return self.checkInfo
-            except:
-                print("Error: unable to fetch data")
+                    self.check_info.append(i[1])
+                    self.check_info.append(i[0])
+                    self.check_info.append(i[2])
+                return self.check_info
+            except ConnectionAbortedError as e:
+                self.ui.textBrowser_log.append("[ERROR] 数据库连接失败！")
+
+        cursor.close()
+        db.close()
 
     # 显示迟到和未到
-    def showLateAbsentee(self):
-        db = pymysql.connect(host="localhost", user="root", password="mysql105", database="facerecognition")
-        cursor = db.cursor()
+    def show_late_absence(self):
+        db, cursor = connect_to_sql()
         # 一定要注意字符串在检索时要加''！
         sql1 = "select name from checkin where Description = '{}'".format('迟到')
         sql2 = "select name from students"
@@ -616,9 +537,9 @@ class MainWindow(QtWidgets.QMainWindow):
             for x in results:
                 self.lateNums.append(x[0])
             self.lateNums.sort()
-            # print(self.lateNums)
-        except:
-            print("Error: unable to fetch latedata")
+            # self.ui.textBrowser_log.append(self.lateNums)
+        except ConnectionAbortedError as e:
+            self.ui.textBrowser_log.append('[INFO] 查询迟到数据失败', e)
         try:
             cursor.execute(sql2)
             results2 = cursor.fetchall()
@@ -627,8 +548,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.allNums.append(i[0])
             self.allNums.sort()
             print(self.allNums)
-        except:
-            print("Error: unable to fetch absenteedata")
+        except ConnectionAbortedError as e:
+            self.ui.textBrowser_log.append('[INFO] 查询未到数据失败', e)
 
         db.commit()
         cursor.close()
@@ -668,212 +589,27 @@ class MainWindow(QtWidgets.QMainWindow):
         View2.setModel(model2)
 
     # 训练人脸识别模型，静态方法
-    @staticmethod
-    def train_model():
-        GeneratorModel.Generator()
-        GeneratorModel.TrainModel()
-        print('[INFO] Model have been trained!')
-
-
-##########################################################################################
-class infoDialog(QWidget):
-    def __init__(self):
-        # super()构造器方法返回父级的对象。__init__()方法是构造器的一个方法。
-        super().__init__()
-
-        self.lists = []
-        self.Dialog = InfoUI.Ui_Form()
-        self.Dialog.setupUi(self)
-
-        # 设置窗口名称和图标
-        self.setWindowTitle('个人信息采集')
-        self.setWindowIcon(QIcon('./logo_imgs/fcblogo.jpg'))
-        # 导入opencv人脸检测xml文件
-        self.cascade = './mode_face_detection/haarcascade_frontalface_default.xml'
-        # 设置单张图片背景
-        pixmap = QPixmap('./logo_imgs/bkg2.png')
-        self.Dialog.label_capture.setPixmap(pixmap)
-
-        # 设置信息采集按键连接函数
-        self.Dialog.bt_collectInfo.clicked.connect(self.openCam)
-        # 设置拍照按键连接函数
-        self.Dialog.bt_takephoto.clicked.connect(self.takePhoto)
-        # 设置查询信息按键连接函数
-        self.Dialog.bt_checkInfo.clicked.connect(self.checkInfo)
-        # 设置写入信息按键连接函数
-        self.Dialog.bt_changeInfo.clicked.connect(self.changeInfo)
-        # 初始化信息导入列表
-        self.users = []
-        # 初始化摄像头
-        # self.url2 = cv2.CAP_DSHOW
-        self.url2 = 1
-        self.cap2 = cv2.VideoCapture()
-
-        # 初始化保存人脸数目
-        self.photos = 0
-
-    def handle_click(self):
-        if not self.isVisible():
-            self.show()
-
-    def handle_close(self):
-        self.close()
-
-    def openCam(self):
-        # 判断摄像头是否打开，如果打开则为true，反之为false
-        flagCam = self.cap2.isOpened()
-        if flagCam == False:
-            # 通过对话框设置被采集人学号
-            self.text, self.ok = QInputDialog.getText(self, '创建个人图像数据库', '请输入学号:')
-            if self.ok and self.text != '':
-                self.Dialog.label_capture.clear()
-                self.cap2.open(0 + self.url2)
-                self.showCapture()
-        elif flagCam == True:
-            self.cap2.release()
-            self.Dialog.label_capture.clear()
-            self.Dialog.bt_collectInfo.setText(u'采集人像')
-
-    def showCapture(self):
-        self.Dialog.bt_collectInfo.setText(u'停止采集')
-        self.Dialog.label_capture.clear()
-        print("[INFO] starting video stream...")
-        # 循环来自视频文件流的帧
-        while self.cap2.isOpened():
-            ret, frame = self.cap2.read()
-            QApplication.processEvents()
-            self.orig = frame.copy()
-            frame2 = imutils.resize(frame, width=500)
-
-            frame2 = cv2.putText(frame2, "Have token {}/100 faces".format(self.photos), (50, 60),
-                                 cv2.FONT_HERSHEY_SIMPLEX, 0.7, (200, 100, 50), 2)
-            # 显示输出框架
-            show_video2 = cv2.cvtColor(frame2, cv2.COLOR_BGR2RGB)  # 这里指的是显示原图
-            # opencv读取图片的样式，不能通过Qlabel进行显示，需要转换为Qimage。
-            # QImage(uchar * data, int width, int height, int bytesPerLine, Format format)
-            self.showImage2 = QImage(show_video2.data, show_video2.shape[1], show_video2.shape[0], QImage.Format_RGB888)
-            self.Dialog.label_capture.setPixmap(QPixmap.fromImage(self.showImage2))
-            # 因为最后一张画面会显示在GUI中，此处实现清除。
-        self.Dialog.label_capture.clear()
-
-    # 创建文件夹
-    def mkdir(self, path):
-        # 去除首位空格
-        path = path.strip()
-        # 去除尾部 \ 符号
-        path = path.rstrip("\\")
-        # 判断路径是否存在, 存在=True; 不存在=False
-        isExists = os.path.exists(path)
-        # 判断结果
-        if not isExists:
-            # 如果不存在则创建目录
-            os.makedirs(path)
-            return True
-
-    def takePhoto(self):
-        self.photos += 1
-        self.filename = "./face_dataset/{}/".format(self.text)
-        self.mkdir(self.filename)
-        photo_save_path = os.path.join(os.path.dirname(os.path.abspath('__file__')), '{}'.format(self.filename))
-        self.showImage2.save(photo_save_path + datetime.now().strftime("%Y%m%d%H%M%S") + ".png")
-        # p = os.path.sep.join([output, "{}.png".format(str(total).zfill(5))])
-        # cv2.imwrite(p, self.showImage2)
-        if self.photos == 100:
-            QMessageBox.information(self, "Information", self.tr("采集成功!"), QMessageBox.Yes | QMessageBox.No)
-
-    # 数据库查询
-    def checkInfo(self):
-        # 键入ID
-        global cursor, db
-        # 打开数据库连接
-        try:
-            db = pymysql.connect(host="localhost", user="root", password="mysql105", database="facerecognition")
-            # 使用cursor()方法获取操作游标
-            cursor = db.cursor()
-        except ValueError:
-            print("数据库连接失败！")
-
-        self.input_ID = self.Dialog.lineEdit_ID.text()
-        # 查询语句，实现通过ID关键字检索个人信息的功能
-        sql = "SELECT * FROM STUDENTS WHERE ID = {}".format(self.input_ID)
-        # 执行查询
-        if self.input_ID != '':
-            try:
-                cursor.execute(sql)
-                # 获取所有记录列表
-                results = cursor.fetchall()
-                for i in results:
-                    self.lists.append(i[0])
-                    self.lists.append(i[1])
-                    self.lists.append(i[2])
-                    self.lists.append(i[3])
-                    self.lists.append(i[4])
-            except ValueError:
-                print("Error: unable to fetch data")
-
-        # 设置显示数据层次结构，5行2列(包含行表头)
-        self.model = QtGui.QStandardItemModel(5, 0)
-        # 设置数据行、列标题
-        self.model.setHorizontalHeaderLabels(['值'])
-        self.model.setVerticalHeaderLabels(['学号', '姓名', '班级', '性别', '生日'])
-
-        # 设置填入数据内容
-        nums = len(self.lists)
-        if nums == 0:
-            QMessageBox.warning(self, "warning", "人脸数据库中无此人信息，请马上录入！", QMessageBox.Yes | QMessageBox.No)
-
-        for row in range(nums):
-            item = QtGui.QStandardItem(self.lists[row])
-            # 设置每个位置的文本值
-            self.model.setItem(row, 0, item)
-        # 指定显示的tableView控件，实例化表格视图
-        self.View = self.Dialog.tableView
-        self.View.setModel(self.model)
-        # 关闭数据库连接
-        db.close()
-
-    # 将采集信息写入数据库
-    def userInfo(self):
-        ID = self.Dialog.lineEdit_ID.text()
-        Name = self.Dialog.lineEdit_Name.text()
-        Class = self.Dialog.lineEdit_Class.text()
-        Sex = self.Dialog.lineEdit_Sex.text()
-        Birth = self.Dialog.lineEdit_Birth.text()
-        self.users.append((ID, Name, Class, Sex, Birth))
-
-        return self.users
-
-    def changeInfo(self):
-        # 打开数据库连接
-        db = pymysql.connect(host="localhost", user="root", password="mysql105", database="facerecognition")
-        # 使用cursor()方法获取操作游标
-        cursor = db.cursor()
-        # 写入数据库
-        try:
-            # 如果存在数据，先删除再写入。前提是设置唯一索引字段或者主键。
-            insert_sql = "replace into students(ID, Name, Class, Sex, Birthday) values(%s, %s, %s, %s, %s)"
-            users = self.userInfo()
-            cursor.executemany(insert_sql, users)
-        except Exception as e:
-            print(e)
-            print("sql execute failed")
+    # @staticmethod
+    def train_model(self):
+        q_message = QMessageBox.information(self, "Tips", "你确定要重新训练模型吗？", QMessageBox.Yes | QMessageBox.No)
+        if QMessageBox.Yes == q_message:
+            GeneratorModel.Generator()
+            GeneratorModel.TrainModel()
+            self.ui.textBrowser_log.append('[INFO] Model has been trained!')
         else:
-            print("sql execute success")
-            QMessageBox.warning(self, "warning", "录入成功，请勿重复操作！", QMessageBox.Yes | QMessageBox.No)
+            self.ui.textBrowser_log.append('[INFO] Cancel train process!')
 
-        # 提交到数据库执行
-        db.commit()
-        # 关闭数据库
-        cursor.close()
-        # 关闭数据库连接
-        db.close()
+    def open_info_dialog(self):
+        if self.cap.isOpened():
+            QMessageBox.warning(self, "Warning", "为防止摄像头冲突，已自动关闭摄像头！", QMessageBox.Ok)
+            self.cap.release()
 
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     # 创建并显示窗口
     mainWindow = MainWindow()
-    infoWindow = infoDialog()
+    infoWindow = InfoDialog()
     mainWindow.ui.bt_gathering.clicked.connect(infoWindow.handle_click)
     mainWindow.show()
     sys.exit(app.exec_())

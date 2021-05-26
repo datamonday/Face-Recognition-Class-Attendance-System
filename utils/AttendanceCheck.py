@@ -2,7 +2,9 @@ from datetime import datetime
 import pandas as pd
 import numpy as np
 
-rootdir = 'D:/Github/Face-Recognition-Class-Attendance-System/'
+# 将根目录（execute所在目录）添加到环境变量
+from utils.GlobalVar import add_path_to_sys
+rootdir = add_path_to_sys()
 
 filenames = ['Auxiliary_Info.xlsx', 
              'Classroom_Course_Schedule.xlsx',
@@ -73,7 +75,7 @@ def holiday_judgment(judg_time=datetime.now(), holidays=au_info['Holiday Date'])
     return is_now_holiday
         
     
-def attendance_check(set_time = '19:00:00'):
+def attendance_check(set_time='19:00:00'):
     """
     考勤状态判断，根据指定的时间判断考勤状态
     手动设定考勤时间（简单）
@@ -117,7 +119,6 @@ def attendance_check(set_time = '19:00:00'):
     if time_diff_days < 0:
         # 一天的秒数减去time_diff_days
         time_span_att = 60 * 60 * 24 - time_diff_seconds
-        
 
         if time_span_att < normal_span:
             att_state = '正常'

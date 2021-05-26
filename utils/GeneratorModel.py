@@ -8,21 +8,22 @@ import sys
 from sklearn.preprocessing import LabelEncoder
 from sklearn.svm import SVC
 
-rootdir = "D:/Github/Face-Recognition-Class-Attendance-System/"
-sys.path.append(rootdir)
+# 将根目录（execute所在目录）添加到环境变量
+from utils.GlobalVar import add_path_to_sys
+rootdir = add_path_to_sys()
 
 
 def Generator():
     # 人脸数据所在路径
     global embedder
-    face_data = "./face_dataset"
+    face_data = f"{rootdir}/face_dataset"
     # 输出面部嵌入的序列化数据库的路径
-    embeddings = "./saved_weights/embeddings.pickle"
+    embeddings = f"{rootdir}/saved_weights/embeddings.pickle"
     # OpenCV深度学习人脸检测器的路径
-    detector_path = "./model_face_detection/"
+    detector_path = f"{rootdir}/model_face_detection/"
     # OpenCV深度学习面部嵌入模型的路径；Torch深度学习模型，可产生128-D面部嵌入
     # https://cmusatyalab.github.io/openface/models-and-accuracies/
-    embedding_model = "./model_facenet/openface_nn4.small2.v1.t7"
+    embedding_model = f"{rootdir}/model_facenet/openface_nn4.small2.v1.t7"
     # 置信度
     default_confidence = 0.5
 
@@ -110,11 +111,11 @@ def Generator():
 
 def TrainModel():
     # 面部嵌入的序列化db的路径
-    embeddings_path = "./saved_weights/embeddings.pickle"
+    embeddings_path = f"{rootdir}/saved_weights/embeddings.pickle"
     # 训练识别面部的输出模型的路径
-    recognizer_path = "./saved_weights/recognizer.pickle"
+    recognizer_path = f"{rootdir}/saved_weights/recognizer.pickle"
     # 输出标签编码器的路径
-    le_path = "./saved_weights/le.pickle"
+    le_path = f"{rootdir}/saved_weights/le.pickle"
 
     # 加载面嵌入
     print("[INFO] loading face embeddings...")

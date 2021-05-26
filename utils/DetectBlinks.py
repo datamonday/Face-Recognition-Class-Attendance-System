@@ -9,8 +9,9 @@ import cv2
 import sys
 
 
-rootdir = "D://Github//Face-Recognition-Class-Attendance-System//"
-sys.path.append(rootdir)
+# 将根目录（execute所在目录）添加到环境变量
+from utils.GlobalVar import add_path_to_sys
+rootdir = add_path_to_sys()
 
 # 调用摄像头的id，如果是笔记本且外接了USB，可以设置为1
 cam_id = 1
