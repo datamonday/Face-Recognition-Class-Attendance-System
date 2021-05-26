@@ -6,13 +6,16 @@ import numpy as np
 from utils.GlobalVar import add_path_to_sys
 rootdir = add_path_to_sys()
 
+# 导入考勤状态判断相关函数和变量
+from utils.GlobalVar import COURSE_TIME, LATE_SPAN
+
 filenames = ['Auxiliary_Info.xlsx', 
              'Classroom_Course_Schedule.xlsx',
              'Classroom_Info.xlsx', 
              'College_Class_Info.xlsx', 
              'Attendance_Logs.xlsx']
 
-au_info = pd.read_excel(rootdir + filenames[0])
+au_info = pd.read_excel(rootdir + '/development/' + filenames[0])
 
 
 def calculate_current_teach_week(semester_first_week_date='2021-3-08 08:00:00'):
@@ -75,10 +78,11 @@ def holiday_judgment(judg_time=datetime.now(), holidays=au_info['Holiday Date'])
     return is_now_holiday
         
     
-def attendance_check(set_time='19:00:00'):
+def attendance_check(set_time='08:00:00'):
     """
+    注意: 隔天比较存在问题，比如23:00考勤开始，00:30打卡，但是这种情况在现实中不存在
     考勤状态判断，根据指定的时间判断考勤状态
-    手动设定考勤时间（简单）
+    手动设定考勤时间（简单），例如：
     - 1）正常：考勤时间设定之前的一小时内签到
     - 2）迟到：上课之后45分钟内
     - 3）其他：上课超过45分钟
@@ -90,10 +94,10 @@ def attendance_check(set_time='19:00:00'):
     ####################### 自定义参数 #####################
     # 正常：考勤时间设定之前的一小时内（3600s）签到
     normal_span = 60 * 60  # seconds
-    # 设定一节课时长
-    course_time = 95  # minutes
+    # 设定一节课(大课，两小节)时长
+    course_time = COURSE_TIME  # minutes
     # 设定上课多长时间认为是迟到
-    late_span = 45
+    late_span = LATE_SPAN
     ########################################################
     
     # 获取完整的时间格式
@@ -118,7 +122,7 @@ def attendance_check(set_time='19:00:00'):
     # 如果time_diff_days为负，说明还未到考勤时间，此时计算距离考勤的时间
     if time_diff_days < 0:
         # 一天的秒数减去time_diff_days
-        time_span_att = 60 * 60 * 24 - time_diff_seconds
+        time_span_att = 60 * 60 * 23 - time_diff_seconds
 
         if time_span_att < normal_span:
             att_state = '正常'
@@ -139,4 +143,4 @@ def attendance_check(set_time='19:00:00'):
 
     print(f'[INFO] 时间设定：{att_time}，考勤时间：{now}，考勤状态：{att_state}')
     
-    return now, att_state
+    return att_state

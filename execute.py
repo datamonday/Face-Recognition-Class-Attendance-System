@@ -33,6 +33,9 @@ from utils.InfoDialog import InfoDialog
 # 添加数据库连接操作
 from utils.GlobalVar import connect_to_sql
 
+# 导入考勤状态判断相关函数
+from utils.AttendanceCheck import attendance_check
+
 # # 为方便调试，修改后导入模块，重新导入全局变量模块
 # import importlib
 # importlib.reload(GeneratorModel)
@@ -150,13 +153,12 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def open_camera(self):
         # 判断摄像头是否打开，如果打开则为true，反之为false
-        flag = self.cap.isOpened()
-        if not flag:
+        if not self.cap.isOpened():
             self.ui.label_logo.clear()
             # 默认打开Windows系统笔记本自带的摄像头，如果是外接USB，可将0改成1
             self.cap.open(self.url)
             self.show_camera()
-        elif flag:
+        else:
             self.cap.release()
             self.ui.label_logo.clear()
             self.ui.label_camera.clear()
@@ -269,10 +271,9 @@ class MainWindow(QtWidgets.QMainWindow):
                         confidence = detections[0, 0, i, 2]
 
                         # 用于更新相机开关按键信息
-                        flag = self.cap.isOpened()
-                        if not flag:
+                        if not self.cap.isOpened():
                             self.ui.bt_open_camera.setText(u'打开相机')
-                        elif flag:
+                        else:
                             self.ui.bt_open_camera.setText(u'关闭相机')
 
                         # 过滤弱检测
@@ -311,6 +312,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     if bt_liveness == '停止检测':
                         ChineseText = PutChineseText.put_chinese_text('./utils/microsoft.ttf')
                         frame = ChineseText.draw_text(frame, (330, 80), ' 请眨眨眼睛 ', 25, (55, 255, 55))
+
                     # 显示输出框架
                     show_video = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)  # 这里指的是显示原图
                     # opencv读取图片的样式，不能通过Qlabel进行显示，需要转换为Qimage。
@@ -344,7 +346,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
             if names_num > 0:
                 # 将签到信息写入数据库
-                self.lineTextInfo2 = []
+                self.line_text_info = []
                 # 打开数据库连接
                 db, cursor = connect_to_sql()
                 # 获取系统时间，保存到秒
@@ -352,24 +354,28 @@ class MainWindow(QtWidgets.QMainWindow):
                 results2 = self.use_id_get_info(self.write_data[0])
 
                 # 判断是否迟到
-                self.ymd = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                self.ymd2 = datetime.now().strftime("%H:%M:%S")
-                compareResult2 = self.compare_time('{}'.format(self.ymd2), '{}'.format(self.check_time_set))
+                self.now = datetime.now()
+                self.attendance_state = attendance_check(self.check_time_set)
 
-                # 82800表示23个小时,在compare_time()函数中,如果第一个时间小于第二个时间,则为第一个时间加24h后再减去第二时间;
-                # 而正常的结果应该为'正常'.
-                if compareResult2 <= 82800:
-                    self.description2 = '迟到'
-                else:
-                    self.description2 = '正常'
-                self.lineTextInfo2.append((results2[0], results2[1], results2[2], current_time, self.description2))
-                print(self.lineTextInfo2)
+                # self.hms = self.now.strftime("%H:%M:%S")
+                # compare_result = self.compare_time('{}'.format(self.hms), '{}'.format(self.check_time_set))
+                # # 82800表示23个小时,在compare_time()函数中,如果第一个时间小于第二个时间,则为第一个时间加24h后再减去第二时间;
+                # # 而正常的结果应该为'正常'.
+                # if compare_result <= 82800:
+                #     self.description2 = '迟到'
+                # else:
+                #     self.description2 = '正常'
+
+                self.line_text_info.append((results2[0], results2[1], results2[2],
+                                            current_time,
+                                            self.attendance_state))
+                print(self.line_text_info)
 
                 # 写入数据库
                 try:
                     # 如果存在数据，先删除再写入。前提是设置唯一索引字段或者主键。
                     insert_sql2 = "replace into checkin(Name, ID, Class, Time, Description) values(%s, %s, %s, %s, %s)"
-                    users2 = self.lineTextInfo2
+                    users2 = self.line_text_info
                     cursor.executemany(insert_sql2, users2)
                 except ValueError as e:
                     self.ui.textBrowser_log.append("[INFO] SQL execute failed!", e)
@@ -393,7 +399,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def check_nums(self):
         # 选择的班级
         input_class = self.ui.comboBox_class.currentText()
-        print("你当前选择的班级为:", input_class)
+        print("[INFO] 你当前选择的班级为:", input_class)
         try:
             # 打开数据库连接
             # 添加数据库连接操作, 使用cursor()方法获取操作游标
@@ -402,9 +408,9 @@ class MainWindow(QtWidgets.QMainWindow):
             sql = "select * from studentnums where class = {}".format(input_class)
 
         except ValueError:
-            self.ui.textBrowser_log.append("连接数据库失败！")
+            self.ui.textBrowser_log.append("[ERROR] 连接数据库失败！")
         else:
-            self.ui.textBrowser_log.append("连接数据库成功，正在执行查询···")
+            self.ui.textBrowser_log.append("[INFO] 连接数据库成功，正在执行查询···")
 
         # 执行查询
         if input_class != '':

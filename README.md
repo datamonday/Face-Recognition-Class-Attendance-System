@@ -152,6 +152,8 @@ pip install dlib
 
 通过信息采集界面实现，针对学生的人脸图片建库。
 
+可以手动添加，可以自动采集人脸图像。注意：从自动转为手动方式时，画面会不显示，但不影响采集！
+
 ## 4.2 人脸识别简介
 
 深度学习人脸识别流程可以总结如下（图自论文：I. Masi, Y. Wu, T. Hassner and P. Natarajan, "**Deep Face Recognition: A Survey**," 2018 31st SIBGRAPI Conference on Graphics, Patterns and Images (SIBGRAPI), 2018, pp. 471-478, doi: 10.1109/SIBGRAPI.2018.00067.）：
