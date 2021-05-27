@@ -593,7 +593,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>训练模型</string>
+    <string>加载模型</string>
    </property>
   </widget>
  </widget>

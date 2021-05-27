@@ -206,7 +206,7 @@ class Ui_Form(object):
         self.comboBox_location_2.setItemText(5, _translate("Form", "DBFace"))
         self.comboBox_location_2.setItemText(6, _translate("Form", "FaceBoxes"))
         self.comboBox_location_2.setItemText(7, _translate("Form", "S3FD"))
-        self.bt_load_model.setText(_translate("Form", "训练模型"))
+        self.bt_load_model.setText(_translate("Form", "加载模型"))
 
 
 if __name__ == "__main__":

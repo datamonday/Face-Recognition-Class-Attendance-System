@@ -3,7 +3,6 @@ import re
 import sys
 import pymysql
 
-
 # 全局变量
 # 摄像头ID
 CAMERA_ID = 1
