@@ -38,6 +38,12 @@
 
 ![rf_check_sys_info_collect_v2.0](./images/rf_check_sys_info_collect_v2.0.jpg)
 
+暂未完成的一部分功能说明：
+
+![Unfinished part of the function](./images/Unfinished part of the function.jpg)
+
+
+
 ---
 
 # 1. 项目简介及声明
