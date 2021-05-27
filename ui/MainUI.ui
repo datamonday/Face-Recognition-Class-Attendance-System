@@ -114,9 +114,9 @@
    <property name="geometry">
     <rect>
      <x>850</x>
-     <y>680</y>
+     <y>670</y>
      <width>211</width>
-     <height>81</height>
+     <height>51</height>
     </rect>
    </property>
    <property name="text">
@@ -140,9 +140,9 @@
    <property name="geometry">
     <rect>
      <x>850</x>
-     <y>770</y>
+     <y>780</y>
      <width>211</width>
-     <height>71</height>
+     <height>61</height>
     </rect>
    </property>
    <property name="text">
@@ -246,9 +246,9 @@
   <widget class="QPushButton" name="bt_gathering">
    <property name="geometry">
     <rect>
-     <x>20</x>
+     <x>10</x>
      <y>680</y>
-     <width>121</width>
+     <width>131</width>
      <height>61</height>
     </rect>
    </property>
@@ -285,7 +285,7 @@
   <widget class="QLabel" name="label_title">
    <property name="geometry">
     <rect>
-     <x>220</x>
+     <x>350</x>
      <y>10</y>
      <width>400</width>
      <height>40</height>
@@ -349,14 +349,14 @@
   <widget class="QPushButton" name="bt_generator">
    <property name="geometry">
     <rect>
-     <x>20</x>
+     <x>170</x>
      <y>750</y>
-     <width>121</width>
+     <width>151</width>
      <height>61</height>
     </rect>
    </property>
    <property name="text">
-    <string>更新人脸库</string>
+    <string>训练模型</string>
    </property>
   </widget>
   <widget class="QTableView" name="tableView_escape">
@@ -451,10 +451,10 @@
   <widget class="QPushButton" name="bt_check_random">
    <property name="geometry">
     <rect>
-     <x>170</x>
-     <y>680</y>
-     <width>151</width>
-     <height>61</height>
+     <x>850</x>
+     <y>730</y>
+     <width>211</width>
+     <height>41</height>
     </rect>
    </property>
    <property name="text">
@@ -490,14 +490,14 @@
   <widget class="QPushButton" name="bt_check_variation">
    <property name="geometry">
     <rect>
-     <x>170</x>
+     <x>10</x>
      <y>750</y>
-     <width>151</width>
+     <width>131</width>
      <height>61</height>
     </rect>
    </property>
    <property name="text">
-    <string>核验人脸与数据库信息</string>
+    <string>核验人脸数据库信息</string>
    </property>
   </widget>
   <widget class="QLabel" name="label_location_2">
@@ -531,6 +531,69 @@
      <width>61</width>
      <height>31</height>
     </rect>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="comboBox_location_2">
+   <property name="geometry">
+    <rect>
+     <x>170</x>
+     <y>680</y>
+     <width>151</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <item>
+    <property name="text">
+     <string>FaceNet (ResNet-SSD)</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>FaceNet (MTCNN)</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>RetinaFace</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>ArcFace</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>CenterFace</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>DBFace</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>FaceBoxes</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>S3FD</string>
+    </property>
+   </item>
+  </widget>
+  <widget class="QPushButton" name="bt_load_model">
+   <property name="geometry">
+    <rect>
+     <x>170</x>
+     <y>710</y>
+     <width>151</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>训练模型</string>
    </property>
   </widget>
  </widget>

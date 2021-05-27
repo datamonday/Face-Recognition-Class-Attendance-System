@@ -69,12 +69,12 @@
     <rect>
      <x>310</x>
      <y>510</y>
-     <width>101</width>
+     <width>211</width>
      <height>41</height>
     </rect>
    </property>
    <property name="text">
-    <string>修改信息(DB)</string>
+    <string>添加或修改信息(DB)</string>
    </property>
   </widget>
   <widget class="QPushButton" name="bt_start_collect">
@@ -290,26 +290,13 @@
    <property name="geometry">
     <rect>
      <x>420</x>
-     <y>510</y>
-     <width>101</width>
-     <height>41</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>查询人脸数量</string>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="bt_add_info">
-   <property name="geometry">
-    <rect>
-     <x>420</x>
      <y>460</y>
      <width>101</width>
      <height>41</height>
     </rect>
    </property>
    <property name="text">
-    <string>添加信息(DB)</string>
+    <string>查询人脸数量</string>
    </property>
   </widget>
   <widget class="QPushButton" name="bt_check_dirs_faces">
@@ -347,7 +334,6 @@
   <zorder>spinBox_set_num</zorder>
   <zorder>checkBox_auto_collect</zorder>
   <zorder>bt_check_id_faces</zorder>
-  <zorder>bt_add_info</zorder>
   <zorder>bt_check_dirs_faces</zorder>
  </widget>
  <tabstops>
@@ -361,7 +347,6 @@
   <tabstop>lineEdit_sex</tabstop>
   <tabstop>lineEdit_birth</tabstop>
   <tabstop>bt_check_info</tabstop>
-  <tabstop>bt_add_info</tabstop>
   <tabstop>bt_change_info</tabstop>
   <tabstop>bt_check_id_faces</tabstop>
   <tabstop>tableView</tabstop>
