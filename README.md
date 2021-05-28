@@ -21,7 +21,7 @@
 
 - 完善随机答题点名功能；
 
-  ![random_check](D:\Github\Face-Recognition-Class-Attendance-System\images\random_check.jpg)
+  ![random_check](./images/random_check.jpg)
 
 ---
 
