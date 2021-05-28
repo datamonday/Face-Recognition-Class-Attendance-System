@@ -1,8 +1,9 @@
 import os
 import pickle
 import sys
+import threading
 from datetime import datetime
-
+from copy import deepcopy
 import cv2
 import imutils
 import numpy as np
@@ -20,7 +21,9 @@ from imutils.video import VideoStream
 from scipy.spatial import distance as dist
 
 # 导入UI主界面
-from ui import MainUI
+# from ui import MainUI
+# 使用mainwindow类重构
+from ui import MainWindow as MainWindowUI
 
 # 导入打印中文脚本
 from utils import PutChineseText
@@ -30,12 +33,14 @@ from utils import GeneratorModel
 from utils.BlinksDetectionThread import BlinksDetectThread
 # 导入信息采集槽函数类
 from utils.InfoDialog import InfoDialog
+# 导入随机点名类
+from utils.RandomCheck import RCDialog
 # 添加数据库连接操作
 from utils.GlobalVar import connect_to_sql
 
 # 导入考勤状态判断相关函数
 from utils.AttendanceCheck import attendance_check
-from utils.GlobalVar import FR_LOOP_NUM
+from utils.GlobalVar import FR_LOOP_NUM, statical_facedata_nums
 
 # # 为方便调试，修改后导入模块，重新导入全局变量模块
 # import importlib
@@ -56,7 +61,8 @@ class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         # super()构造器方法返回父级的对象。__init__()方法是构造器的一个方法。
         super().__init__()
-        self.ui = MainUI.Ui_Form()
+        # self.ui = MainUI.Ui_Form()
+        self.ui = MainWindowUI.Ui_MainWindow()
         self.ui.setupUi(self)
 
         # ####################### 相对路径 ######################
@@ -127,6 +133,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.lineEdit_supplement.setClearButtonEnabled(True)
         # 设置查看结果（显示未到和迟到）按键的连接函数
         self.ui.bt_view.clicked.connect(self.show_late_absence)
+        # 核验本地人脸数据集与数据库中的ID是否一致，即验证是否有未录入数据库的情况，以及是否有未采集人脸的情况。
+        self.ui.bt_check_variation.clicked.connect(self.check_variation_db)
 
         # self.check_time_set, ok = QInputDialog.getText(self, '考勤时间设定', '请输入考勤时间(格式为00:00:00):')
         self.check_time_set = '08:00:00'
@@ -356,7 +364,7 @@ class MainWindow(QtWidgets.QMainWindow):
                         # Python字典按照值的大小降序排列，并返回键值对元组
                         # 第一个索引[0]表示取排序后的第一个键值对，第二个索引[0]表示取键
                         most_id_in_dict = \
-                        sorted(self.face_name_dict.items(), key=lambda kv: (kv[1], kv[0]), reverse=True)[0][0]
+                            sorted(self.face_name_dict.items(), key=lambda kv: (kv[1], kv[0]), reverse=True)[0][0]
                         # 将当前帧检测到次数最多的人脸保存到self.set_name集合中
                         self.set_name = set()
                         self.set_name.add(most_id_in_dict)
@@ -395,19 +403,23 @@ class MainWindow(QtWidgets.QMainWindow):
             if names_num > 0:
                 # 将签到信息写入数据库
                 self.line_text_info = []
-                # 打开数据库连接
-                db, cursor = connect_to_sql()
-                # 获取系统时间，保存到秒
-                current_time = str(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-                results2 = self.use_id_get_info(self.write_data[0])
+                try:
+                    # 打开数据库连接
+                    db, cursor = connect_to_sql()
+                except ConnectionError as e:
+                    print("[Error] 数据库连接失败！")
+                else:
+                    # 获取系统时间，保存到秒
+                    current_time = str(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                    results2 = self.use_id_get_info(self.write_data[0])
 
-                # 判断是否迟到
-                self.now = datetime.now()
-                self.attendance_state = attendance_check(self.check_time_set)
-                self.line_text_info.append((results2[0], results2[1], results2[2],
-                                            current_time,
-                                            self.attendance_state))
-                print(self.line_text_info)
+                    # 判断是否迟到
+                    self.now = datetime.now()
+                    self.attendance_state = attendance_check(self.check_time_set)
+                    self.line_text_info.append((results2[0], results2[1], results2[2],
+                                                current_time,
+                                                self.attendance_state))
+                    print(self.line_text_info)
 
                 # 写入数据库
                 try:
@@ -415,8 +427,8 @@ class MainWindow(QtWidgets.QMainWindow):
                     insert_sql2 = "replace into checkin(Name, ID, Class, Time, Description) values(%s, %s, %s, %s, %s)"
                     users2 = self.line_text_info
                     cursor.executemany(insert_sql2, users2)
-                except ValueError as e:
-                    self.ui.textBrowser_log.append("[INFO] SQL execute failed!", e)
+                except ConnectionAbortedError as e:
+                    self.ui.textBrowser_log.append("[INFO] SQL execute failed!")
                 else:
                     self.ui.textBrowser_log.append("[INFO] SQL execute success!")
                     QMessageBox.information(self, "Tips", "签到成功，请勿重复操作！", QMessageBox.Ok)
@@ -426,17 +438,10 @@ class MainWindow(QtWidgets.QMainWindow):
                     cursor.close()
                     db.close()
 
-    # 比较时间大小，判断是否迟到
-    def compare_time(self, time1, time2):
-        s_time = datetime.strptime(time1, '%H:%M:%S')
-        e_time = datetime.strptime(time2, '%H:%M:%S')
-        delta = s_time - e_time
-
-        return delta.seconds
-
     # 查询班级人数
     def check_nums(self):
         # 选择的班级
+        global db
         input_class = self.ui.comboBox_class.currentText()
         # print("[INFO] 你当前选择的班级为:", input_class)
         if input_class != '':
@@ -455,18 +460,18 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.nums = []
                 for i in results:
                     self.nums.append(i[1])
-                    
+
                 # 用于查询每班的实到人数
                 sql2 = "select * from checkin where class = {}".format(input_class)
                 cursor.execute(sql2)
-                
+
                 # 获取所有记录列表
                 results2 = cursor.fetchall()
                 self.ui.textBrowser_log.append("[INFO] 查询成功！")
-                
+
                 # 设定考勤时间
                 self.check_time_set = self.format_check_time_set()
-                
+
                 if self.check_time_set != '':
                     QMessageBox.information(self, "Tips", "您设定的考勤时间为{}".format(self.check_time_set), QMessageBox.Ok)
 
@@ -476,12 +481,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
                 else:
                     QMessageBox.warning(self, "Warning", "请先设定考勤时间(例 08:00)！", QMessageBox.Ok)
-    
+
             finally:
                 # lcd控件显示人数
                 self.ui.lcd_1.display(self.nums[0])
                 self.ui.lcd_2.display(self.nums2)
-
                 # 关闭数据库连接
                 db.close()
 
@@ -511,7 +515,7 @@ class MainWindow(QtWidgets.QMainWindow):
         elif condition_hour >= 10 and condition_minute < 10:
             check_time_set = original_hour + ":" + "0" + original_minute + ":" + "00"
         elif condition_hour >= 10 and condition_minute >= 10:
-            check_time_set = original_hour + ":" + original_minute + ":" + "00" 
+            check_time_set = original_hour + ":" + original_minute + ":" + "00"
         else:
             check_time_set = "08:00:00"
 
@@ -584,82 +588,83 @@ class MainWindow(QtWidgets.QMainWindow):
                     cursor.close()
                     db.close()
             else:
-                QMessageBox.warning(self, "Error", f"您输入的ID {self.lineText_leave_id} 不存在！请先录入数据库！")
+                QMessageBox.critical(self, "Error", f"您输入的ID {self.lineText_leave_id} 不存在！请先录入数据库！")
         else:
-            QMessageBox.warning(self, "Error", "学号不能为空，请输入后重试！", QMessageBox.Ok)  # (QMessageBox.Yes | QMessageBox.No)
+            QMessageBox.critical(self, "Error", "学号不能为空，请输入后重试！", QMessageBox.Ok)  # (QMessageBox.Yes | QMessageBox.No)
         # 输入框清零
         self.ui.lineEdit_leave.clear()
         self.ui.lineEdit_supplement.clear()
 
     # 考勤结束后，将班级内未签到的学生设为旷课
     def set_rest_absenteeism(self):
+        pass
+
+    # 核验本地人脸与数据库信息是否一致
+    def check_variation_db(self):
         try:
             db, cursor = connect_to_sql()
         except ConnectionAbortedError as e:
             self.ui.textBrowser_log.append('[INFO] 连接数据库失败，请检查配置信息！')
         else:
-            # 一定要注意字符串在检索时要加''！
-            sql1 = "select name from checkin where Description = '{}'".format('迟到')
-            sql2 = "select name from students"
-            # 执行查询1
-            cursor.execute(sql1)
+            sql = "select id, name from students"
+            # 执行查询
+            cursor.execute(sql)
             results = cursor.fetchall()
-            self.lateNums = []
-            for x in results:
-                self.lateNums.append(x[0])
-            self.lateNums.sort()
-            # self.ui.textBrowser_log.append(self.lateNums)
-            
-            # 执行查询2
-            cursor.execute(sql2)
-            results2 = cursor.fetchall()
-            self.allNums = []
-            for i in results2:
-                self.allNums.append(i[0])
-            self.allNums.sort()
-            # self.ui.textBrowser_log.append(self.allNums)
+            self.student_ids = []
+            self.student_names = []
+            for item in results:
+                self.student_ids.append(item[0])
+                self.student_names.append(item[1])
+            # 初始化点名列表
+            # self.random_check_names = deepcopy(self.student_names)
+            # self.random_check_ids = deepcopy(self.student_ids)
+            print('[INFO] 当前班级内的成员包括：', self.student_ids, self.student_names)
+            # 统计本地人脸数据信息
+            num_dict = statical_facedata_nums()
+            # ID
+            self.keys = []
+            for key in list(num_dict.keys()):
+                self.keys.append(int(key))
+            # print(set(self.student_ids))
+            # print(set(self.keys))
+            self.check_variation_set_operate()
         finally:
             db.commit()
             cursor.close()
             db.close()
 
-        # 集合运算，算出未到的和迟到的
-        self.AbsenteeNums = set(set(self.allNums) - set(self.lateNums))
-        self.AbsenteeNums = list(self.AbsenteeNums)
-        self.AbsenteeNums.sort()
+    def check_variation_set_operate(self):
+        # 并集
+        union_set = set(self.student_ids).union(set(self.keys))
+        # 交集
+        inter_set = set(self.student_ids).intersection(set(self.keys))
+        # 差集
+        two_diff_set = set(self.student_ids).difference(set(self.keys))
+        # 本地与数据库不同的ID
+        local_diff_set = union_set - set(self.student_ids)
+        # 数据库与本地不同的ID
+        db_diff_set = union_set - set(self.keys)
 
-        # 在控件中显示未到的同学
-        rowLate = len(self.lateNums)
-        rowAbsentee = len(self.AbsenteeNums)
-        model1 = QtGui.QStandardItemModel(rowLate, 0)
-        # 设置数据行、列标题
-        model1.setHorizontalHeaderLabels(['姓名'])
-        # 设置填入数据内容
-        for row in range(rowLate):
-            item = QtGui.QStandardItem(self.lateNums[row])
-            # 设置每个位置的文本值
-            model1.setItem(row, 0, item)
-        # 指定显示的tableView控件，实例化表格视图
-        View1 = self.ui.tableView_escape
-        View1.setModel(model1)
+        if len(union_set) == 0:
+            QMessageBox.critical(self, "Error", "本地人脸库名称与数据库均未录入信息，请先录入！", QMessageBox.Ok)
+            print('[Error] union_set:', union_set)
+        elif len(inter_set) == 0 and len(union_set) != 0:
+            QMessageBox.critical(self, "Error", "本地人脸库名称与数据库完全不一致，请先修改！", QMessageBox.Ok)
+            print('[Error] inter_set:', inter_set)
+        elif len(two_diff_set) == 0 and len(union_set) != 0:
+            QMessageBox.information(self, "Success", "核验完成，未发现问题！", QMessageBox.Ok)
+            print('[Success] two_diff_set:', two_diff_set)
 
-        # 迟到显示
-        model2 = QtGui.QStandardItemModel(rowAbsentee, 0)
-        # 设置数据行、列标题
-        model2.setHorizontalHeaderLabels(['姓名'])
-        # 设置填入数据内容
-        for row in range(rowAbsentee):
-            item = QtGui.QStandardItem(self.AbsenteeNums[row])
-            # 设置每个位置的文本值
-            model2.setItem(row, 0, item)
-            
-        # 指定显示的tableView控件，实例化表格视图
-        View2 = self.ui.tableView_late
-        View2.setModel(model2)
-
+        elif len(local_diff_set) != 0:
+            QMessageBox.warning(self, "Warning", "数据库中以下ID的人脸信息还未采集，请抓紧采集！", QMessageBox.Ok)
+            print('[Warning] local_diff_set:', local_diff_set)
+        elif len(db_diff_set) != 0:
+            QMessageBox.warning(self, "Warning", "本地人脸以下ID的信息还未录入数据库，请抓紧录入！", QMessageBox.Ok)
+            print('[Warning] db_diff_set:', db_diff_set)
 
     # 使用ID当索引找到其它信息
     def use_id_get_info(self, ID):
+        global cursor, db
         if ID != '':
             try:
                 # 打开数据库连接
@@ -691,62 +696,62 @@ class MainWindow(QtWidgets.QMainWindow):
         try:
             cursor.execute(sql1)
             results = cursor.fetchall()
-            self.lateNums = []
+            self.late_students = []
             for x in results:
-                self.lateNums.append(x[0])
-            self.lateNums.sort()
-            # self.ui.textBrowser_log.append(self.lateNums)
+                self.late_students.append(x[0])
+            self.late_students.sort()
+            # self.ui.textBrowser_log.append(self.late_students)
         except ConnectionAbortedError as e:
             self.ui.textBrowser_log.append('[INFO] 查询迟到数据失败', e)
-        
+
         try:
             cursor.execute(sql2)
             results2 = cursor.fetchall()
-            self.allNums = []
+            self.students_id = []
             for i in results2:
-                self.allNums.append(i[0])
-            self.allNums.sort()
-            print(self.allNums)
+                self.students_id.append(i[0])
+            self.students_id.sort()
+            print(self.students_id)
         except ConnectionAbortedError as e:
             self.ui.textBrowser_log.append('[INFO] 查询未到数据失败', e)
-        
+
         finally:
             db.commit()
             cursor.close()
             db.close()
 
         # 集合运算，算出未到的和迟到的
-        self.AbsenteeNums = set(set(self.allNums) - set(self.lateNums))
-        self.AbsenteeNums = list(self.AbsenteeNums)
-        self.AbsenteeNums.sort()
+        self.absence_nums = set(set(self.students_id) - set(self.late_students))
+        self.absence_nums = list(self.absence_nums)
+        self.absence_nums.sort()
 
         # 在控件中显示未到的同学
-        rowLate = len(self.lateNums)
-        rowAbsentee = len(self.AbsenteeNums)
-        model1 = QtGui.QStandardItemModel(rowLate, 0)
+        n_row_late = len(self.late_students)
+        n_row_absence= len(self.absence_nums)
+        model1 = QtGui.QStandardItemModel(n_row_late, 0)
         # 设置数据行、列标题
         model1.setHorizontalHeaderLabels(['姓名'])
         # 设置填入数据内容
-        for row in range(rowLate):
-            item = QtGui.QStandardItem(self.lateNums[row])
+        for row in range(n_row_late):
+            item = QtGui.QStandardItem(self.late_students[row])
             # 设置每个位置的文本值
             model1.setItem(row, 0, item)
         # 指定显示的tableView控件，实例化表格视图
-        View1 = self.ui.tableView_escape
-        View1.setModel(model1)
+        table_view1 = self.ui.tableView_escape
+        table_view1.setModel(model1)
 
         # 迟到显示
-        model2 = QtGui.QStandardItemModel(rowAbsentee, 0)
+        module2 = QtGui.QStandardItemModel(rowAbsentee, 0)
         # 设置数据行、列标题
-        model2.setHorizontalHeaderLabels(['姓名'])
+        module2.setHorizontalHeaderLabels(['姓名'])
         # 设置填入数据内容
         for row in range(rowAbsentee):
-            item = QtGui.QStandardItem(self.AbsenteeNums[row])
+            item = QtGui.QStandardItem(self.absence_nums[row])
             # 设置每个位置的文本值
-            model2.setItem(row, 0, item)
+            module2.setItem(row, 0, item)
         # 指定显示的tableView控件，实例化表格视图
-        View2 = self.ui.tableView_late
-        View2.setModel(model2)
+        table_view2 = self.ui.tableView_late
+        table_view2.setModel(module2)
 
     # 训练人脸识别模型，静态方法
     # @staticmethod
@@ -775,6 +780,8 @@ if __name__ == '__main__':
     # 创建并显示窗口
     mainWindow = MainWindow()
     infoWindow = InfoDialog()
+    rcWindow = RCDialog()
     mainWindow.ui.bt_gathering.clicked.connect(infoWindow.handle_click)
+    mainWindow.ui.bt_random_check.clicked.connect(rcWindow.handle_click)
     mainWindow.show()
     sys.exit(app.exec_())

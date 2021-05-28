@@ -15,7 +15,17 @@
 > Last Update : 2021.05.26
 
 ---
-# Update: 2021.05.26
+# Update: 2021.05.28
+
+- 完善本地人脸和数据库ID核验功能；
+
+- 完善随机答题点名功能；
+
+  ![random_check](D:\Github\Face-Recognition-Class-Attendance-System\images\random_check.jpg)
+
+---
+
+# Update: 2021.05.24-27
 
 又到毕业季，终于有时间集中进行处理，为了让该项目更容易上手且更鲁棒，主要做了如下更新：
 
@@ -38,6 +48,8 @@
 ![rf_check_sys_v2.0](./images/rf_check_sys_v2.0.jpg)
 
 ![rf_check_sys_info_collect_v2.0](./images/rf_check_sys_info_collect_v2.0.jpg)
+
+![students_table](D:\Github\Face-Recognition-Class-Attendance-System\images\students_table.jpg)
 
 暂未完成的一部分功能说明：
 

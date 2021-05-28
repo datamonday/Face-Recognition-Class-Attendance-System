@@ -252,7 +252,8 @@ class InfoDialog(QWidget):
             finally:
                 cursor.close()
                 db.close()
-    
+
+    # 检查本地人脸数据信息，包括文件夹名（ID）及图片数量
     def check_dir_faces_num(self):
         num_dict = statical_facedata_nums()
         keys = list(num_dict.keys())

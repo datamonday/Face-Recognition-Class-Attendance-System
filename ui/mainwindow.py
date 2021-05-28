@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'mainwindow.ui'
+# Form implementation generated from reading ui file 'MainWindow.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.4
 #
@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1083, 907)
+        MainWindow.resize(1086, 907)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.label_camera = QtWidgets.QLabel(self.centralwidget)
@@ -25,9 +25,9 @@ class Ui_MainWindow(object):
         self.label_time.setGeometry(QtCore.QRect(850, 20, 231, 30))
         self.label_time.setText("")
         self.label_time.setObjectName("label_time")
-        self.bt_check_random = QtWidgets.QPushButton(self.centralwidget)
-        self.bt_check_random.setGeometry(QtCore.QRect(860, 740, 211, 41))
-        self.bt_check_random.setObjectName("bt_check_random")
+        self.bt_random_check = QtWidgets.QPushButton(self.centralwidget)
+        self.bt_random_check.setGeometry(QtCore.QRect(860, 740, 211, 41))
+        self.bt_random_check.setObjectName("bt_random_check")
         self.bt_supplement = QtWidgets.QPushButton(self.centralwidget)
         self.bt_supplement.setGeometry(QtCore.QRect(970, 300, 101, 31))
         self.bt_supplement.setObjectName("bt_supplement")
@@ -167,7 +167,7 @@ class Ui_MainWindow(object):
         self.comboBox_location.addItem("")
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 1083, 23))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 1086, 23))
         self.menubar.setObjectName("menubar")
         self.menuFile = QtWidgets.QMenu(self.menubar)
         self.menuFile.setObjectName("menuFile")
@@ -183,6 +183,15 @@ class Ui_MainWindow(object):
         MainWindow.setStatusBar(self.statusbar)
         self.actionAbout = QtWidgets.QAction(MainWindow)
         self.actionAbout.setObjectName("actionAbout")
+        self.actionOpen = QtWidgets.QAction(MainWindow)
+        self.actionOpen.setObjectName("actionOpen")
+        self.actionSetting = QtWidgets.QAction(MainWindow)
+        self.actionSetting.setObjectName("actionSetting")
+        self.actionExport = QtWidgets.QAction(MainWindow)
+        self.actionExport.setObjectName("actionExport")
+        self.menuFile.addAction(self.actionOpen)
+        self.menuFile.addAction(self.actionSetting)
+        self.menuFile.addAction(self.actionExport)
         self.menuHelp.addAction(self.actionAbout)
         self.menubar.addAction(self.menuFile.menuAction())
         self.menubar.addAction(self.menuEdit.menuAction())
@@ -195,7 +204,7 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
-        self.bt_check_random.setText(_translate("MainWindow", "随机点名"))
+        self.bt_random_check.setText(_translate("MainWindow", "随机点名"))
         self.bt_supplement.setText(_translate("MainWindow", "漏签补签"))
         self.label_location.setText(_translate("MainWindow", "考勤地点"))
         self.bt_blinks.setText(_translate("MainWindow", "活体检测"))
@@ -235,6 +244,10 @@ class Ui_MainWindow(object):
         self.menuView.setTitle(_translate("MainWindow", "View"))
         self.menuHelp.setTitle(_translate("MainWindow", "Help"))
         self.actionAbout.setText(_translate("MainWindow", "About"))
+        self.actionAbout.setWhatsThis(_translate("MainWindow", "Author: datamonday"))
+        self.actionOpen.setText(_translate("MainWindow", "Open"))
+        self.actionSetting.setText(_translate("MainWindow", "Setting"))
+        self.actionExport.setText(_translate("MainWindow", "Export"))
 
 
 if __name__ == "__main__":

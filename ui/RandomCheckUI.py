@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'RandomCheckDialog.ui'
+# Form implementation generated from reading ui file 'RandomCheckUI.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.4
 #
@@ -11,67 +11,66 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 
-class Ui_Dialog(object):
-    def setupUi(self, Dialog):
-        Dialog.setObjectName("Dialog")
-        Dialog.resize(480, 230)
-        self.label_title = QtWidgets.QLabel(Dialog)
-        self.label_title.setGeometry(QtCore.QRect(140, 20, 111, 41))
-        self.label_title.setObjectName("label_title")
-        self.pb_success = QtWidgets.QPushButton(Dialog)
+class Ui_Form(object):
+    def setupUi(self, Form):
+        Form.setObjectName("Form")
+        Form.resize(480, 232)
+        self.pb_success = QtWidgets.QPushButton(Form)
         self.pb_success.setGeometry(QtCore.QRect(30, 160, 101, 41))
         self.pb_success.setObjectName("pb_success")
-        self.label_id = QtWidgets.QLabel(Dialog)
-        self.label_id.setGeometry(QtCore.QRect(40, 100, 31, 31))
-        self.label_id.setObjectName("label_id")
-        self.lcdNumber_id = QtWidgets.QLCDNumber(Dialog)
-        self.lcdNumber_id.setGeometry(QtCore.QRect(80, 100, 121, 31))
-        self.lcdNumber_id.setObjectName("lcdNumber_id")
-        self.label_name2 = QtWidgets.QLabel(Dialog)
-        self.label_name2.setGeometry(QtCore.QRect(240, 100, 31, 31))
-        self.label_name2.setObjectName("label_name2")
-        self.label_name = QtWidgets.QLabel(Dialog)
-        self.label_name.setGeometry(QtCore.QRect(280, 100, 171, 31))
-        self.label_name.setText("")
-        self.label_name.setObjectName("label_name")
-        self.pb_fail = QtWidgets.QPushButton(Dialog)
+        self.label = QtWidgets.QLabel(Form)
+        self.label.setGeometry(QtCore.QRect(270, 90, 31, 41))
+        self.label.setObjectName("label")
+        self.pb_fail = QtWidgets.QPushButton(Form)
         self.pb_fail.setGeometry(QtCore.QRect(150, 160, 101, 41))
         self.pb_fail.setObjectName("pb_fail")
-        self.pb_absence = QtWidgets.QPushButton(Dialog)
-        self.pb_absence.setGeometry(QtCore.QRect(270, 160, 81, 41))
-        self.pb_absence.setObjectName("pb_absence")
-        self.pb_other = QtWidgets.QPushButton(Dialog)
+        self.label_id = QtWidgets.QLabel(Form)
+        self.label_id.setGeometry(QtCore.QRect(40, 90, 31, 41))
+        self.label_id.setObjectName("label_id")
+        self.pb_other = QtWidgets.QPushButton(Form)
         self.pb_other.setGeometry(QtCore.QRect(370, 160, 81, 41))
         self.pb_other.setObjectName("pb_other")
-        self.pb_start = QtWidgets.QPushButton(Dialog)
-        self.pb_start.setGeometry(QtCore.QRect(290, 20, 161, 41))
+        self.label_name = QtWidgets.QLabel(Form)
+        self.label_name.setGeometry(QtCore.QRect(280, 90, 171, 31))
+        self.label_name.setText("")
+        self.label_name.setObjectName("label_name")
+        self.lcdNumber_id = QtWidgets.QLCDNumber(Form)
+        self.lcdNumber_id.setGeometry(QtCore.QRect(80, 90, 171, 41))
+        self.lcdNumber_id.setObjectName("lcdNumber_id")
+        self.pb_start = QtWidgets.QPushButton(Form)
+        self.pb_start.setGeometry(QtCore.QRect(150, 20, 301, 41))
         self.pb_start.setObjectName("pb_start")
+        self.pb_connect_db = QtWidgets.QPushButton(Form)
+        self.pb_connect_db.setGeometry(QtCore.QRect(30, 20, 101, 41))
+        self.pb_connect_db.setObjectName("pb_connect_db")
+        self.textBrowser_name = QtWidgets.QTextBrowser(Form)
+        self.textBrowser_name.setGeometry(QtCore.QRect(310, 90, 141, 41))
+        self.textBrowser_name.setObjectName("textBrowser_name")
+        self.pb_absence = QtWidgets.QPushButton(Form)
+        self.pb_absence.setGeometry(QtCore.QRect(270, 160, 81, 41))
+        self.pb_absence.setObjectName("pb_absence")
 
-        self.retranslateUi(Dialog)
-        QtCore.QMetaObject.connectSlotsByName(Dialog)
-        Dialog.setTabOrder(self.pb_success, self.pb_fail)
-        Dialog.setTabOrder(self.pb_fail, self.pb_absence)
-        Dialog.setTabOrder(self.pb_absence, self.pb_other)
-        Dialog.setTabOrder(self.pb_other, self.pb_start)
+        self.retranslateUi(Form)
+        QtCore.QMetaObject.connectSlotsByName(Form)
 
-    def retranslateUi(self, Dialog):
+    def retranslateUi(self, Form):
         _translate = QtCore.QCoreApplication.translate
-        Dialog.setWindowTitle(_translate("Dialog", "Dialog"))
-        self.label_title.setText(_translate("Dialog", "随机点名答题系统"))
-        self.pb_success.setText(_translate("Dialog", "成功回答"))
-        self.label_id.setText(_translate("Dialog", "学号"))
-        self.label_name2.setText(_translate("Dialog", "姓名"))
-        self.pb_fail.setText(_translate("Dialog", "答题失败"))
-        self.pb_absence.setText(_translate("Dialog", "未到"))
-        self.pb_other.setText(_translate("Dialog", "其他"))
-        self.pb_start.setText(_translate("Dialog", "开始筛选幸运观众"))
+        Form.setWindowTitle(_translate("Form", "Form"))
+        self.pb_success.setText(_translate("Form", "成功回答"))
+        self.label.setText(_translate("Form", "姓名"))
+        self.pb_fail.setText(_translate("Form", "答题失败"))
+        self.label_id.setText(_translate("Form", "学号"))
+        self.pb_other.setText(_translate("Form", "其他"))
+        self.pb_start.setText(_translate("Form", "开始筛选幸运观众"))
+        self.pb_connect_db.setText(_translate("Form", "连接数据库"))
+        self.pb_absence.setText(_translate("Form", "未到"))
 
 
 if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
-    Dialog = QtWidgets.QDialog()
-    ui = Ui_Dialog()
-    ui.setupUi(Dialog)
-    Dialog.show()
+    Form = QtWidgets.QWidget()
+    ui = Ui_Form()
+    ui.setupUi(Form)
+    Form.show()
     sys.exit(app.exec_())
