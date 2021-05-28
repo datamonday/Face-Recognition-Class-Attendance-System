@@ -4,6 +4,7 @@
 import freetype
 import copy
 
+
 class put_chinese_text(object):
     def __init__(self, ttf):
         self._face = freetype.Face(ttf)
@@ -95,21 +96,21 @@ class put_chinese_text(object):
                     img[y_pos + row][x_pos + col][2] = color[2]
 
 
-# 测试
-# if __name__ == '__main__':
-#
-#     import cv2
-#
-#     line = '你好'
-#     img = np.zeros([300, 300, 3])
-#
-#     color_ = (0, 255, 0)  # Green
-#     pos = (3, 3)
-#     text_size = 24
-#
-#     # ft = put_chinese_text('wqy-zenhei.ttc')
-#     ft = put_chinese_text('msyh.ttf')
-#     image = ft.draw_text(img, pos, line, text_size, color_)
-#
-#     cv2.imshow('diplay', image)
-#     cv2.waitKey(0)
+if __name__ == '__main__':
+
+    import cv2
+    import numpy as np
+
+    line = '你好'
+    img = np.zeros([300, 300, 3])
+
+    color_ = (0, 255, 0)  # Green
+    pos = (3, 3)
+    text_size = 24
+
+    # ft = put_chinese_text('wqy-zenhei.ttc')
+    ft = put_chinese_text('microsoft.ttf')
+    image = ft.draw_text(img, pos, line, text_size, color_)
+
+    cv2.imshow('diplay', image)
+    cv2.waitKey(0)

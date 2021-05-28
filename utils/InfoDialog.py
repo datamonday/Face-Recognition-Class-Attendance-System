@@ -40,7 +40,7 @@ class InfoDialog(QWidget):
             pixmap = QPixmap(f'{rootdir}/logo_imgs/bkg2.png')
             self.Dialog.label_capture.setPixmap(pixmap)
         except FileNotFoundError as e:
-            print("[ERROR] 路径不正确！(source file: {})".format(self.current_filename), e)
+            print("[ERROR] UI背景图片路径不正确！(source file: {})".format(self.current_filename), e)
 
         # 设置信息采集按键连接函数
         self.Dialog.bt_start_collect.clicked.connect(self.open_camera)
@@ -196,76 +196,87 @@ class InfoDialog(QWidget):
 
     # 数据库查询
     def check_info(self):
-        # 用于存放统计信息
-        lists = []
-        # 打开数据库连接
-        try:
-            db, cursor = connect_to_sql()
-        except ConnectionRefusedError as e:
-            print("[ERROR] 数据库连接失败！", e)
-
+        # 获取用户输入的ID的内容，str格式
         self.input_id = self.Dialog.lineEdit_id.text()
-        # 查询语句，实现通过ID关键字检索个人信息的功能
-        sql = "SELECT * FROM STUDENTS WHERE ID = {}".format(self.input_id)
-        # 执行查询
         if self.input_id != '':
+            # 用于存放统计信息
+            lists = []
+            # 打开数据库连接
             try:
-                cursor.execute(sql)
-                # 获取所有记录列表
-                results = cursor.fetchall()
-                for i in results:
-                    lists.append(i[0])
-                    lists.append(i[1])
-                    lists.append(i[2])
-                    lists.append(i[3])
-                    lists.append(i[4])
-            except ValueError as e:
-                print("[ERROR] 无法查询！", e)
+                db, cursor = connect_to_sql()
+            except ConnectionRefusedError as e:
+                print("[ERROR] 数据库连接失败！", e)
+            # 如果连接数据库成功，则继续执行查询
+            else:
+                # 查询语句，实现通过ID关键字检索个人信息的功能
+                sql = "SELECT * FROM STUDENTS WHERE ID = {}".format(self.input_id)
+                # 执行查询
+                try:
+                    cursor.execute(sql)
+                    # 获取所有记录列表
+                    results = cursor.fetchall()
+                    for i in results:
+                        lists.append(i[0])
+                        lists.append(i[1])
+                        lists.append(i[2])
+                        lists.append(i[3])
+                        lists.append(i[4])
+                except ValueError as e:
+                    print("[ERROR] 无法通过当前语句查询！", e)
+                    
+                else:
+                    # 设置显示数据层次结构，5行2列(包含行表头)
+                    table_view_module = QtGui.QStandardItemModel(5, 1)
+                    # 设置数据行、列标题
+                    table_view_module.setHorizontalHeaderLabels(['属性', '值'])
+                    rows_name = ['学号', '姓名', '班级', '性别', '生日']
+                    # table_view_module.setVerticalHeaderLabels(['学号', '姓名', '班级', '性别', '生日'])
 
-        # 设置显示数据层次结构，5行2列(包含行表头)
-        table_view_module = QtGui.QStandardItemModel(5, 1)
-        # 设置数据行、列标题
-        table_view_module.setHorizontalHeaderLabels(['属性', '值'])
-        rows_name = ['学号', '姓名', '班级', '性别', '生日']
-        # table_view_module.setVerticalHeaderLabels(['学号', '姓名', '班级', '性别', '生日'])
+                    # 设置填入数据内容
+                    lists[0] = self.input_id
+                    if len(lists) == 0:
+                        QMessageBox.warning(self, "warning", "人脸数据库中无此人信息，请马上录入！", QMessageBox.Ok)
+                    else:
+                        for row, content in enumerate(lists):
+                            row_name = QtGui.QStandardItem(rows_name[row])
+                            item = QtGui.QStandardItem(content)
+                            # 设置每个位置的行名称和文本值
+                            table_view_module.setItem(row, 0, row_name)
+                            table_view_module.setItem(row, 1, item)
 
-        # 设置填入数据内容
-        lists[0] = self.input_id
-        if len(lists) == 0:
-            QMessageBox.warning(self, "warning", "人脸数据库中无此人信息，请马上录入！", QMessageBox.Ok)
-        for row, content in enumerate(lists):
-            row_name = QtGui.QStandardItem(rows_name[row])
-            item = QtGui.QStandardItem(content)
-            # 设置每个位置的行名称和文本值
-            table_view_module.setItem(row, 0, row_name)
-            table_view_module.setItem(row, 1, item)
-
-        # 指定显示的tableView控件，实例化表格视图
-        self.Dialog.tableView.setModel(table_view_module)
-        # 关闭数据库连接
-        assert isinstance(db, object)
-        db.close()
+                        # 指定显示的tableView控件，实例化表格视图
+                        self.Dialog.tableView.setModel(table_view_module)
+                    
+                    assert isinstance(db, object)
+                    # 关闭数据库连接
+            finally:
+                cursor.close()
+                db.close()
     
     def check_dir_faces_num(self):
         num_dict = statical_facedata_nums()
         keys = list(num_dict.keys())
         values = list(num_dict.values())
-        print(values)
-        # 设置显示数据层次结构，5行2列(包含行表头)
-        table_view_module = QtGui.QStandardItemModel(len(keys), 1)
-        table_view_module.setHorizontalHeaderLabels(['ID', 'Number'])
+        # print(values)
+        # 如果没有人脸文件夹，则提示用户采集数据
+        if len(keys) == 0:
+            QMessageBox.warning(self, "Error", "face_dataset文件夹下没有人脸数据，请马上录入！", QMessageBox.Ok)
+        else:
+            # 设置显示数据层次结构，5行2列(包含行表头)
+            table_view_module = QtGui.QStandardItemModel(len(keys), 1)
+            table_view_module.setHorizontalHeaderLabels(['ID', 'Number'])
 
-        for row, key in enumerate(keys):
-            print(key, values[row])
-            id = QtGui.QStandardItem(key)
-            num = QtGui.QStandardItem(str(values[row]))
+            for row, key in enumerate(keys):
+                print(key, values[row])
+                id = QtGui.QStandardItem(key)
+                num = QtGui.QStandardItem(str(values[row]))
 
-            # 设置每个位置的行名称和文本值
-            table_view_module.setItem(row, 0, id)
-            table_view_module.setItem(row, 1, num)
+                # 设置每个位置的行名称和文本值
+                table_view_module.setItem(row, 0, id)
+                table_view_module.setItem(row, 1, num)
 
-        # 指定显示的tableView控件，实例化表格视图
-        self.Dialog.tableView.setModel(table_view_module)
+            # 指定显示的tableView控件，实例化表格视图
+            self.Dialog.tableView.setModel(table_view_module)
 
     # 将采集信息写入数据库
     def write_info(self):
@@ -299,13 +310,14 @@ class InfoDialog(QWidget):
                 QMessageBox.warning(self, "Warning", "修改成功，请勿重复操作！", QMessageBox.Ok)
             else:
                 QMessageBox.information(self, "Error", "修改失败！请保证每个属性不为空！", QMessageBox.Ok)
-
+        # 捕获所有除系统退出以外的所有异常
         except Exception as e:
-            print("[ERROR] sql execute failed", e)
-
-        # 提交到数据库执行
-        db.commit()
-        # 关闭数据库
-        cursor.close()
-        # 关闭数据库连接
-        db.close()
+            print("[ERROR] sql execute failed!", e)
+            
+        finally:
+            # 提交到数据库执行
+            db.commit()
+            # 关闭数据库
+            cursor.close()
+            # 关闭数据库连接
+            db.close()

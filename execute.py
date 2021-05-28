@@ -182,6 +182,8 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.switch_bt = 0
                     self.ui.bt_start_check.setText(u'开始考勤')
                     self.show_camera()
+                else:
+                    print("[Error] The value of self.switch_bt must be zero or one!")
             else:
                 QMessageBox.information(self, "Tips", "请先打开摄像头！", QMessageBox.Ok)
 
@@ -418,10 +420,11 @@ class MainWindow(QtWidgets.QMainWindow):
                 else:
                     self.ui.textBrowser_log.append("[INFO] SQL execute success!")
                     QMessageBox.information(self, "Tips", "签到成功，请勿重复操作！", QMessageBox.Ok)
-                # 提交到数据库执行
-                db.commit()
-                cursor.close()
-                db.close()
+                finally:
+                    # 提交到数据库执行
+                    db.commit()
+                    cursor.close()
+                    db.close()
 
     # 比较时间大小，判断是否迟到
     def compare_time(self, time1, time2):
@@ -435,58 +438,52 @@ class MainWindow(QtWidgets.QMainWindow):
     def check_nums(self):
         # 选择的班级
         input_class = self.ui.comboBox_class.currentText()
-        print("[INFO] 你当前选择的班级为:", input_class)
-        try:
-            # 打开数据库连接
-            # 添加数据库连接操作, 使用cursor()方法获取操作游标
-            db, cursor = connect_to_sql()
-            # 查询语句，实现通过ID关键字检索个人信息的功能
-            sql = "select * from studentnums where class = {}".format(input_class)
-
-        except ValueError:
-            self.ui.textBrowser_log.append("[ERROR] 连接数据库失败！")
-        else:
-            self.ui.textBrowser_log.append("[INFO] 连接数据库成功，正在执行查询...")
-
-        # 执行查询
+        # print("[INFO] 你当前选择的班级为:", input_class)
         if input_class != '':
-            # try:
-            cursor.execute(sql)
-            # 获取所有记录列表
-            results = cursor.fetchall()
-            self.nums = []
-            for i in results:
-                self.nums.append(i[1])
-
-            # 用于查询每班的实到人数
-            sql2 = "select * from checkin where class = {}".format(input_class)
-            cursor.execute(sql2)
-
-            # 获取所有记录列表
-            results2 = cursor.fetchall()
-            # 设定考勤时间
-            self.check_time_set = self.format_check_time_set()
-            if self.check_time_set != '':
-                QMessageBox.information(self, "Tips", "您设定的考勤时间为{}".format(self.check_time_set), QMessageBox.Ok)
-
-                have_checked_id = self.process_check_log(results2)
-                self.nums2 = len(np.unique(have_checked_id))
-                print(self.nums2)
-
+            try:
+                # 打开数据库连接, 使用cursor()方法获取操作游标
+                db, cursor = connect_to_sql()
+            except ValueError:
+                self.ui.textBrowser_log.append("[ERROR] 连接数据库失败！")
             else:
-                QMessageBox.warning(self, "Warning", "请先设定考勤时间(例 08:00)！", QMessageBox.Ok)
+                self.ui.textBrowser_log.append("[INFO] 连接数据库成功，正在执行查询...")
+                # 查询语句，实现通过ID关键字检索个人信息的功能
+                sql = "select * from studentnums where class = {}".format(input_class)
+                cursor.execute(sql)
+                # 获取所有记录列表
+                results = cursor.fetchall()
+                self.nums = []
+                for i in results:
+                    self.nums.append(i[1])
+                    
+                # 用于查询每班的实到人数
+                sql2 = "select * from checkin where class = {}".format(input_class)
+                cursor.execute(sql2)
+                
+                # 获取所有记录列表
+                results2 = cursor.fetchall()
+                self.ui.textBrowser_log.append("[INFO] 查询成功！")
+                
+                # 设定考勤时间
+                self.check_time_set = self.format_check_time_set()
+                
+                if self.check_time_set != '':
+                    QMessageBox.information(self, "Tips", "您设定的考勤时间为{}".format(self.check_time_set), QMessageBox.Ok)
 
-            # except ValueError as e:
-            #     self.ui.textBrowser_log.append("[ERROR] 查询失败，请检查命令！", e)
-        else:
-            self.ui.textBrowser_log.append("[INFO] 查询成功！")
+                    have_checked_id = self.process_check_log(results2)
+                    self.nums2 = len(np.unique(have_checked_id))
+                    # print(self.nums2)
 
-        # lcd控件显示人数
-        self.ui.lcd_1.display(self.nums[0])
-        self.ui.lcd_2.display(self.nums2)
+                else:
+                    QMessageBox.warning(self, "Warning", "请先设定考勤时间(例 08:00)！", QMessageBox.Ok)
+    
+            finally:
+                # lcd控件显示人数
+                self.ui.lcd_1.display(self.nums[0])
+                self.ui.lcd_2.display(self.nums2)
 
-        # 关闭数据库连接
-        db.close()
+                # 关闭数据库连接
+                db.close()
 
     # 格式化设定的考勤时间
     def format_check_time_set(self):
@@ -514,7 +511,9 @@ class MainWindow(QtWidgets.QMainWindow):
         elif condition_hour >= 10 and condition_minute < 10:
             check_time_set = original_hour + ":" + "0" + original_minute + ":" + "00"
         elif condition_hour >= 10 and condition_minute >= 10:
-            check_time_set = original_hour + ":" + original_minute + ":" + "00"
+            check_time_set = original_hour + ":" + original_minute + ":" + "00" 
+        else:
+            check_time_set = "08:00:00"
 
         # 格式化考勤时间
         att_time = datetime.strptime(f'{now_y}-{now_m}-{now_d} {check_time_set}', '%Y-%m-%d %H:%M:%S')
@@ -558,6 +557,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.description = "漏签补签"
                 self.lineText_leave_id = self.ui.lineEdit_supplement.text()
                 results = self.use_id_get_info(self.lineText_leave_id)
+            else:
+                print("[Error] The value of button must be one or two!")
 
             if len(results) != 0:
                 try:
@@ -577,10 +578,11 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.ui.textBrowser_log.append("[INFO] 写入数据库成功！")
                     QMessageBox.warning(self, "Warning", "{} {}登记成功，请勿重复操作！".format(self.lineText_leave_id,
                                                                                     self.description), QMessageBox.Ok)
-                # 提交到数据库执行
-                db.commit()
-                cursor.close()
-                db.close()
+                finally:
+                    # 提交到数据库执行
+                    db.commit()
+                    cursor.close()
+                    db.close()
             else:
                 QMessageBox.warning(self, "Error", f"您输入的ID {self.lineText_leave_id} 不存在！请先录入数据库！")
         else:
@@ -591,11 +593,15 @@ class MainWindow(QtWidgets.QMainWindow):
 
     # 考勤结束后，将班级内未签到的学生设为旷课
     def set_rest_absenteeism(self):
-        db, cursor = connect_to_sql()
-        # 一定要注意字符串在检索时要加''！
-        sql1 = "select name from checkin where Description = '{}'".format('迟到')
-        sql2 = "select name from students"
         try:
+            db, cursor = connect_to_sql()
+        except ConnectionAbortedError as e:
+            self.ui.textBrowser_log.append('[INFO] 连接数据库失败，请检查配置信息！')
+        else:
+            # 一定要注意字符串在检索时要加''！
+            sql1 = "select name from checkin where Description = '{}'".format('迟到')
+            sql2 = "select name from students"
+            # 执行查询1
             cursor.execute(sql1)
             results = cursor.fetchall()
             self.lateNums = []
@@ -603,22 +609,19 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.lateNums.append(x[0])
             self.lateNums.sort()
             # self.ui.textBrowser_log.append(self.lateNums)
-        except ConnectionAbortedError as e:
-            self.ui.textBrowser_log.append('[INFO] 查询迟到数据失败', e)
-        try:
+            
+            # 执行查询2
             cursor.execute(sql2)
             results2 = cursor.fetchall()
             self.allNums = []
             for i in results2:
                 self.allNums.append(i[0])
             self.allNums.sort()
-            print(self.allNums)
-        except ConnectionAbortedError as e:
-            self.ui.textBrowser_log.append('[INFO] 查询未到数据失败', e)
-
-        db.commit()
-        cursor.close()
-        db.close()
+            # self.ui.textBrowser_log.append(self.allNums)
+        finally:
+            db.commit()
+            cursor.close()
+            db.close()
 
         # 集合运算，算出未到的和迟到的
         self.AbsenteeNums = set(set(self.allNums) - set(self.lateNums))
@@ -649,20 +652,21 @@ class MainWindow(QtWidgets.QMainWindow):
             item = QtGui.QStandardItem(self.AbsenteeNums[row])
             # 设置每个位置的文本值
             model2.setItem(row, 0, item)
+            
         # 指定显示的tableView控件，实例化表格视图
         View2 = self.ui.tableView_late
         View2.setModel(model2)
-        pass
+
 
     # 使用ID当索引找到其它信息
     def use_id_get_info(self, ID):
-        # 打开数据库连接
-        db, cursor = connect_to_sql()
-        # 查询语句，实现通过ID关键字检索个人信息的功能
-        sql = "select * from students where ID = {}".format(ID)
-        # 执行查询
         if ID != '':
             try:
+                # 打开数据库连接
+                db, cursor = connect_to_sql()
+                # 查询语句，实现通过ID关键字检索个人信息的功能
+                sql = "select * from students where ID = {}".format(ID)
+                # 执行查询
                 cursor.execute(sql)
                 # 获取所有记录列表
                 results = cursor.fetchall()
@@ -674,9 +678,9 @@ class MainWindow(QtWidgets.QMainWindow):
                 return self.check_info
             except ConnectionAbortedError as e:
                 self.ui.textBrowser_log.append("[ERROR] 数据库连接失败！")
-
-        cursor.close()
-        db.close()
+            finally:
+                cursor.close()
+                db.close()
 
     # 显示迟到和未到
     def show_late_absence(self):
@@ -694,6 +698,7 @@ class MainWindow(QtWidgets.QMainWindow):
             # self.ui.textBrowser_log.append(self.lateNums)
         except ConnectionAbortedError as e:
             self.ui.textBrowser_log.append('[INFO] 查询迟到数据失败', e)
+        
         try:
             cursor.execute(sql2)
             results2 = cursor.fetchall()
@@ -704,10 +709,11 @@ class MainWindow(QtWidgets.QMainWindow):
             print(self.allNums)
         except ConnectionAbortedError as e:
             self.ui.textBrowser_log.append('[INFO] 查询未到数据失败', e)
-
-        db.commit()
-        cursor.close()
-        db.close()
+        
+        finally:
+            db.commit()
+            cursor.close()
+            db.close()
 
         # 集合运算，算出未到的和迟到的
         self.AbsenteeNums = set(set(self.allNums) - set(self.lateNums))
