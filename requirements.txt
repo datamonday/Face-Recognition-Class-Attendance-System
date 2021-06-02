@@ -89,7 +89,7 @@ testpath @ file:///home/ktietz/src/ci/testpath_1611930608132/work
 threadpoolctl @ file:///tmp/tmp9twdgx9k/threadpoolctl-2.1.0-py3-none-any.whl
 tornado @ file:///C:/ci/tornado_1606942392901/work
 traitlets @ file:///home/ktietz/src/ci/traitlets_1611929699868/work
-urllib3==1.26.4
+urllib3==1.26.5
 wcwidth @ file:///tmp/build/80754af9/wcwidth_1593447189090/work
 webencodings==0.5.1
 widgetsnbextension==3.5.1
