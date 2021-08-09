@@ -72,7 +72,7 @@ pyrsistent @ file:///C:/ci/pyrsistent_1600141795814/work
 python-dateutil @ file:///home/ktietz/src/ci/python-dateutil_1611928101742/work
 python-magic==0.4.22
 pytz @ file:///tmp/build/80754af9/pytz_1612215392582/work
-pywin32==227
+pywin32==301
 pywinpty==0.5.7
 pyzmq==20.0.0
 qtconsole @ file:///tmp/build/80754af9/qtconsole_1616775094278/work
