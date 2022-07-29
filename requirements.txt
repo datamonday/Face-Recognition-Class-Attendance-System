@@ -39,7 +39,7 @@ MarkupSafe @ file:///C:/ci/markupsafe_1621528314575/work
 Mastodon.py==1.5.1
 matplotlib @ file:///C:/ci/matplotlib-suite_1613408055530/work
 matplotlib-inline @ file:///home/conda/feedstock_root/build_artifacts/matplotlib-inline_1618935594181/work
-mistune==0.8.4
+mistune==2.0.3
 mkl-fft==1.3.0
 mkl-random @ file:///C:/ci/mkl_random_1618854156666/work
 mkl-service==2.3.0
