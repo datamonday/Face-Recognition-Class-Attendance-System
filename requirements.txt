@@ -5,7 +5,7 @@ backcall @ file:///home/ktietz/src/ci/backcall_1611930011877/work
 bleach @ file:///tmp/build/80754af9/bleach_1612211392645/work
 blurhash==1.1.4
 boost==0.1
-certifi==2020.12.5
+certifi==2022.12.7
 cffi @ file:///C:/ci/cffi_1613247279197/work
 chardet==4.0.0
 cmake==3.20.2
